@@ -45,7 +45,7 @@ async fn main(_spawner: Spawner) {
 
     // create SPI
     let mut config = spi::Config::default();
-    config.frequency = 2_000_000;
+    config.frequency = 8_000_000;
     let spi = Spi::new_blocking(p.SPI0, clk, mosi, miso, config);
 
     // Configure CS
@@ -90,40 +90,44 @@ async fn main(_spawner: Spawner) {
     disp.clear();
 
     let colors = [
-        Color3::Red,
-        Color3::Green,
-        Color3::Blue,
         Color3::Yellow,
         Color3::Pink,
+        Color3::Red,
         Color3::Cyan,
+        Color3::Green,
+        Color3::White,
+        Color3::Blue,
+        Color3::Black,
+        Color3::Cyan,
+        Color3::Green,
         // Color3::White,
+        Color3::Blue,
         Color3::Black,
     ];
     let mut cit = colors.iter().cycle();
 
     //let mut i = 0;
-    let mut off = 0;
+    let mut off = 64;
     loop {
+        disp.clear();
+
         let s = "Hello World!";
         for i in 0..s.len() {
             let style = MonoTextStyleBuilder::new()
                 .font(&FONT_6X10)
                 .text_color(*cit.next().unwrap())
                 .build();
-            Text::new(&s[i..i + 1], Point::new(off + (i * 5) as i32, 12), style)
+            Text::new(&s[i..i + 1], Point::new(off + (i * 6) as i32, 11), style)
                 .draw(&mut disp)
                 .unwrap();
-
-            disp.flush();
-            Timer::after(Duration::from_millis(2000)).await;
             // i += 1;
         }
-        Timer::after(Duration::from_millis(2000)).await;
-        disp.clear();
+        disp.flush();
+        Timer::after(Duration::from_millis(50)).await;
 
-        off += 1;
-        if off > 6 {
-            off = 0;
+        off -= 1;
+        if off <= -75 {
+            off = 64;
         }
     }
 
