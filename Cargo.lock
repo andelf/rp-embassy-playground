@@ -537,14 +537,20 @@ dependencies = [
 [[package]]
 name = "embedded-graphics"
 version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "750082c65094fbcc4baf9ba31583ce9a8bb7f52cadfb96f6164b1bc7f922f32b"
 dependencies = [
  "az",
  "byteorder",
- "embedded-graphics-core",
+ "embedded-graphics-core 0.3.3",
  "float-cmp",
  "micromath",
+]
+
+[[package]]
+name = "embedded-graphics-core"
+version = "0.3.3"
+dependencies = [
+ "az",
+ "byteorder",
 ]
 
 [[package]]
@@ -652,6 +658,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
 
 [[package]]
+name = "epd"
+version = "0.0.2"
+dependencies = [
+ "defmt",
+ "embedded-graphics",
+ "embedded-hal 0.2.7",
+]
+
+[[package]]
 name = "errno"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -680,9 +695,9 @@ checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
 
 [[package]]
 name = "float-cmp"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1267f4ac4f343772758f7b1bdcbe767c218bbab93bb432acbf5162bbf85a6c4"
+checksum = "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4"
 dependencies = [
  "num-traits",
 ]
@@ -965,9 +980,9 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
 name = "micromath"
-version = "1.1.1"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc4010833aea396656c2f91ee704d51a6f1329ec2ab56ffd00bfd56f7481ea94"
+checksum = "39617bc909d64b068dcffd0e3e31679195b5576d0c83fadc52690268cc2b2b55"
 
 [[package]]
 name = "nb"
@@ -1262,6 +1277,7 @@ dependencies = [
  "embassy-usb-logger",
  "embedded-graphics",
  "embedded-hal 0.2.7",
+ "epd",
  "heapless",
  "panic-probe",
  "ssd1306",
@@ -1391,7 +1407,7 @@ dependencies = [
  "display-interface",
  "display-interface-i2c",
  "display-interface-spi",
- "embedded-graphics-core",
+ "embedded-graphics-core 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "embedded-hal 0.2.7",
 ]
 

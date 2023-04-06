@@ -51,7 +51,7 @@ impl<DI: WriteOnlyDataCommand> Display<DI> {
         self.di.send_data(DataFormat::U8(&[0x00]))?;
 
         self.di.send_commands(DataFormat::U8(&[0xc0]))?; // Vop set
-        self.di.send_data(DataFormat::U8(&[125, 0]))?;
+        self.di.send_data(DataFormat::U8(&[140, 0]))?;
         self.di.send_commands(DataFormat::U8(&[0xc3]))?; // bias selection
         self.di.send_data(DataFormat::U8(&[0]))?; //default, or 1
 
@@ -67,10 +67,11 @@ impl<DI: WriteOnlyDataCommand> Display<DI> {
         self.di.send_commands(DataFormat::U8(&[0xB6]))?; // led waveform
 
         //self.di.send_data(DataFormat::U8(&[20, 20, 20, 100, 100, 100]))?;
-        //self.di.send_data(DataFormat::U8(&[20, 20, 20, 200, 200, 200]))?;
+        self.di.send_data(DataFormat::U8(&[20, 20, 20, 200, 200, 200]))?;
+        //self.di.send_data(DataFormat::U8(&[20, 20, 20, 50, 50, 50]))?;
         // 1:0.75:0.35
-        self.di
-            .send_data(DataFormat::U8(&[0x20, 0x20, 0x20, 200, 200, 200]))?;
+        //self.di
+        //    .send_data(DataFormat::U8(&[0x50, 0x50, 0x50, 150, 150, 150]))?;
 
         self.di.send_commands(DataFormat::U8(&[0xB7]))?;
         self.di.send_data(DataFormat::U8(&[0x40]))?;

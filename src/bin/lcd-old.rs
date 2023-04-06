@@ -11,7 +11,6 @@ use defmt::*;
 use display_interface::{DataFormat, WriteOnlyDataCommand};
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Level, Output};
-use embassy_rp::i2c::{self, Config};
 use embassy_rp::spi::{self, Spi};
 use embassy_time::{Duration, Timer};
 // use embedded_hal_1::i2c::I2c;

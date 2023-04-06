@@ -24,11 +24,14 @@ cortex-m-rt = "0.7.0"
 panic-probe = { version = "0.3", features = ["print-defmt"] }
 
 ssd1306 = "0.7.1"
-embedded-graphics = "0.7.1"
+# embedded-graphics = "0.7.1"
+embedded-graphics = { path = "../embedded-graphics" }
 embedded-hal = "0.2.7"
 display-interface = "0.4.1"
 heapless = "0.7.16"
 display-interface-spi = "0.4.1"
+
+epd = { path = "../epd" }
 
 [profile.dev]
 opt-level = "z" # Optimize for size.
