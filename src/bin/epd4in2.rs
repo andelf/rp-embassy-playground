@@ -180,7 +180,7 @@ async fn main(_spawner: Spawner) {
         }
         display.clear(WHITE);
 
-        Timer::after(Duration::from_millis(1000)).await;
+        Timer::after(Duration::from_millis(60000)).await;
         led.toggle();
         info!("led toggle");
     }
