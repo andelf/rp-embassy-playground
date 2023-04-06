@@ -45,33 +45,55 @@ impl<DI: WriteOnlyDataCommand> Display<DI> {
     }
 
     pub fn init(&mut self) -> Result<(), DisplayError> {
+        // self.di.send_commands(DataFormat::U8(&[0x01]))?; // SW reset
+
         self.di.send_commands(DataFormat::U8(&[0x11]))?;
         self.di.send_commands(DataFormat::U8(&[0xD2]))?;
         self.di.send_data(DataFormat::U8(&[0x00]))?;
 
-        self.di.send_commands(DataFormat::U8(&[0xc0]))?;
+        self.di.send_commands(DataFormat::U8(&[0xc0]))?; // Vop set
         self.di.send_data(DataFormat::U8(&[140, 0]))?;
 
-        self.di.send_commands(DataFormat::U8(&[0xB0]))?;
-        self.di.send_data(DataFormat::U8(&[0x03]))?;
+        self.di.send_commands(DataFormat::U8(&[0xB0]))?; // Duty set
+        self.di.send_data(DataFormat::U8(&[0b11]))?;
 
-        self.di.send_commands(DataFormat::U8(&[0xB2]))?;
-        self.di.send_data(DataFormat::U8(&[0x1a]))?;
+        self.di.send_commands(DataFormat::U8(&[0xB2]))?; // Frame frequency
+        self.di.send_data(DataFormat::U8(&[0x1a]))?; // 200Hz
 
         self.di.send_commands(DataFormat::U8(&[0xB5]))?;
-        self.di.send_data(DataFormat::U8(&[0x4, 1, 1, 1]))?;
+        self.di.send_data(DataFormat::U8(&[0b1100, 1, 1, 1]))?;
 
         self.di.send_commands(DataFormat::U8(&[0xB6]))?; // led waveform
 
+        // self.di.send_data(DataFormat::U8(&[20, 20, 20, 100, 100, 100]))?;
         //self.di.send_data(DataFormat::U8(&[20, 20, 20, 200, 200, 200]))?;
+        // 1:0.75:0.35
         self.di
-            .send_data(DataFormat::U8(&[20, 20, 20, 255, 255, 255]))?;
+            .send_data(DataFormat::U8(&[20, 20, 20, 200, 180, 160]))?;
 
         self.di.send_commands(DataFormat::U8(&[0xB7]))?;
         self.di.send_data(DataFormat::U8(&[0x40]))?;
 
-        self.di.send_commands(DataFormat::U8(&[0x29]))?;
+        self.di.send_commands(DataFormat::U8(&[0x29]))?; // display on
 
+        self.di.send_commands(DataFormat::U8(&[0xD4]))?; // RGB LED control
+        self.di.send_data(DataFormat::U8(&[0b0_111]))?;
+
+        Ok(())
+    }
+
+    pub fn set_bg_light(&mut self, color: Option<Color3>) -> Result<(), DisplayError> {
+        match color {
+            Some(color) => {
+                self.di.send_commands(DataFormat::U8(&[0xD4]))?; // RGB LED control
+                self.di
+                    .send_data(DataFormat::U8(&[0b1_000 | (color as u8)]))?;
+            }
+            None => {
+                self.di.send_commands(DataFormat::U8(&[0xD4]))?; // RGB LED control
+                self.di.send_data(DataFormat::U8(&[0b1_000]))?;
+            }
+        }
         Ok(())
     }
 

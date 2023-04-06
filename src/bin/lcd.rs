@@ -18,8 +18,11 @@ use embassy_time::{Duration, Timer};
 use {defmt_rtt as _, panic_probe as _};
 
 use display_interface_spi::SPIInterface;
+use embedded_graphics::mono_font::ascii::{FONT_5X8, FONT_6X9};
+use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::*;
+use embedded_graphics::text::TextStyleBuilder;
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
@@ -52,9 +55,12 @@ async fn main(_spawner: Spawner) {
     let mut di = SPIInterface::new(spi, dc, cs);
 
     let mut disp = st7049a::Display::new(di);
+    disp.init();
 
     disp.clear();
     disp.flush();
+
+    //  disp.set_bg_light(Color3::Yellow);
 
     // init
     // 退出休眠模式
@@ -79,36 +85,46 @@ async fn main(_spawner: Spawner) {
     }
     */
 
-    info!("=> {:?}", disp.buf);
+    //info!("=> {:?}", disp.buf);
 
     disp.clear();
 
-    for (y, c) in (0..16).zip(
-        [
-            Color3::White,
-            Color3::Yellow,
-            Color3::Pink,
-            Color3::Red,
-            Color3::Cyan,
-            Color3::Green,
-            Color3::Blue,
-            Color3::Black,
-            Color3::White,
-            Color3::Yellow,
-            Color3::Pink,
-            Color3::Red,
-            Color3::Cyan,
-            Color3::Green,
-            Color3::Blue,
-            Color3::Black,
-        ]
-        .iter(),
-    ) {
-        for x in 0..64 {
-            disp.draw_pixel(x, y, *c);
+    let colors = [
+        Color3::Yellow,
+        Color3::Pink,
+        Color3::Red,
+        Color3::Cyan,
+        Color3::Green,
+        // Color3::White,
+        Color3::Blue,
+        Color3::Black,
+    ];
+    let mut cit = colors.iter().cycle();
+
+    //let mut i = 0;
+    let mut off = 0;
+    loop {
+        let s = "Hello World!";
+        for i in 0..s.len() {
+            let style = MonoTextStyleBuilder::new()
+                .font(&FONT_6X10)
+                .text_color(*cit.next().unwrap())
+                .build();
+            Text::new(&s[i..i + 1], Point::new(off + (i * 5) as i32, 12), style)
+                .draw(&mut disp)
+                .unwrap();
+
+            disp.flush();
+            Timer::after(Duration::from_millis(100)).await;
+            // i += 1;
         }
-        disp.flush();
-        Timer::after(Duration::from_millis(100)).await;
+        Timer::after(Duration::from_millis(1000)).await;
+        disp.clear();
+
+        off += 1;
+        if off > 6 {
+            off = 0;
+        }
     }
 
     loop {
