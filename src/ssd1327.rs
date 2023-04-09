@@ -109,9 +109,9 @@ impl<DI> DrawTarget for Display<DI> {
             // defmt::info!("pt {:?} {}", point.x, point.y);
             let idx = (point.x / 2 + point.y * 64) as usize;
             if point.x % 2 == 0 {
-                self.buffer[idx] = (color.luma() << 4) | self.buffer[idx];
+                self.buffer[idx] = (color.luma() << 4) | (self.buffer[idx] & 0x0f);
             } else {
-                self.buffer[idx] = (color.luma() & 0x0f) | self.buffer[idx];
+                self.buffer[idx] = (color.luma() & 0x0f) | (self.buffer[idx] & 0xf0);
             }
         }
         Ok(())
