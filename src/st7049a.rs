@@ -37,10 +37,7 @@ pub struct Display<DI> {
 
 impl<DI: WriteOnlyDataCommand> Display<DI> {
     pub fn new(di: DI) -> Self {
-        Self {
-            di,
-            buf: [0; PIXELS],
-        }
+        Self { di, buf: [0; PIXELS] }
     }
 
     pub fn init(&mut self) -> Result<(), DisplayError> {
@@ -88,8 +85,7 @@ impl<DI: WriteOnlyDataCommand> Display<DI> {
         match color {
             Some(color) => {
                 self.di.send_commands(DataFormat::U8(&[0xD4]))?; // RGB LED control
-                self.di
-                    .send_data(DataFormat::U8(&[0b1_000 | (color as u8)]))?;
+                self.di.send_data(DataFormat::U8(&[0b1_000 | (color as u8)]))?;
             }
             None => {
                 self.di.send_commands(DataFormat::U8(&[0xD4]))?; // RGB LED control
