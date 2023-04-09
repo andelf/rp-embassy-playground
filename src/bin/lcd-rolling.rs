@@ -1,4 +1,6 @@
-//! SSD1306 OLED
+//! FSC LCD, ST7049A driver, 32x16 dots, 4 colors.
+//!
+//! The screen has 64x32 pixels, but each dot is composed of 4 pixels.
 
 #![no_std]
 #![no_main]

@@ -98,7 +98,6 @@ async fn main(_spawner: Spawner) {
 
     for i in 0..50 {
         buf[i] = 0x07;
-
     }
 
     loop {

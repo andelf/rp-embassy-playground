@@ -1,4 +1,6 @@
-//! SSD1306 OLED
+//! FSC LCD, ST7049A driver, 32x16 dots, 4 colors.
+//!
+//! The screen has 64x32 pixels, but each dot is composed of 4 pixels.
 
 #![no_std]
 #![no_main]
@@ -14,7 +16,6 @@ use embassy_rp::gpio::{Level, Output};
 use embassy_rp::i2c::{self, Config};
 use embassy_rp::spi::{self, Spi};
 use embassy_time::{Duration, Timer};
-// use embedded_hal_1::i2c::I2c;
 use {defmt_rtt as _, panic_probe as _};
 
 use display_interface_spi::SPIInterface;

@@ -1,4 +1,4 @@
-//! SSD1306 OLED
+//! SSD1306 128x64 OLED
 
 #![no_std]
 #![no_main]
@@ -43,8 +43,7 @@ async fn main(_spawner: Spawner) {
     info!("set up i2c ");
     let i2c = i2c::I2c::new_blocking(p.I2C1, scl, sda, Config::default());
     let interface = I2CDisplayInterface::new(i2c);
-    let mut display =
-        Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0).into_terminal_mode();
+    let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0).into_terminal_mode();
     display.init().unwrap();
     display.clear().unwrap();
 
