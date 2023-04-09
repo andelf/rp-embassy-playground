@@ -22,6 +22,7 @@ use {defmt_rtt as _, panic_probe as _};
 
 use display_interface_spi::SPIInterface;
 use embedded_graphics::mono_font::ascii::{FONT_5X8, FONT_6X9};
+use embedded_graphics::mono_font::iso_8859_13::FONT_7X13;
 use embedded_graphics::mono_font::iso_8859_2::FONT_10X20;
 use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::prelude::*;
@@ -88,12 +89,18 @@ async fn main(_spawner: Spawner) {
     let mut values = [0.0f32; 100];
     let mut cursor = 0;
 
+    let mut p26 = p.PIN_26; // A0
+
     loop {
         loop_cnt += 1;
         buf.clear();
-        let temp = adc.read_temperature().await;
-        let val = rp::convert_to_celsius(temp);
-        core::write!(buf, "Temp: {:.3} degrees", val);
+        //let temp = adc.read_temperature().await;
+        // let val = rp::convert_to_celsius(temp);
+        //core::write!(buf, "Temp: {:.3} degrees", val);
+
+        let val = rp::convert_to_voltage(adc.read(&mut p26).await);
+        core::write!(buf, "UV: {:.4} V", val);
+
         values[cursor] = val;
         cursor += 1;
         if cursor >= values.len() {
@@ -119,7 +126,7 @@ async fn main(_spawner: Spawner) {
         let min = values.iter().fold(100.0f32, |acc, &v| acc.min(v));
 
         let range = max - min;
-        if range > 0.1 {
+        if range > 0.05 {
             let mut last = None;
             // only draw if range is big enough
             for (idx, v) in values[cursor..].iter().chain(values[..cursor].iter()).enumerate() {
@@ -142,21 +149,21 @@ async fn main(_spawner: Spawner) {
             }
 
             buf.clear();
-            core::write!(buf, "{:.2} C", min);
-            let style = MonoTextStyleBuilder::new().font(&FONT_5X8).text_color(BLACK).build();
+            core::write!(buf, "{:.3} V", min);
+            let style = MonoTextStyleBuilder::new().font(&FONT_7X13).text_color(BLACK).build();
             Text::with_alignment(
                 &buf,
-                Point::new(5 + loop_cnt * 3 % 200, 240 + 8),
+                Point::new(5 + loop_cnt * 3 % 200, 240 + 9),
                 style,
                 Alignment::Left,
             )
             .draw(&mut display)
             .unwrap();
             buf.clear();
-            core::write!(buf, "{:.2} C", max);
+            core::write!(buf, "{:.3} V", max);
             Text::with_alignment(
                 &buf,
-                Point::new(5 + loop_cnt * 3 % 200, 140 - 8),
+                Point::new(5 + loop_cnt * 3 % 200, 140 - 9),
                 style,
                 Alignment::Left,
             )
@@ -165,7 +172,7 @@ async fn main(_spawner: Spawner) {
         }
 
         // refresh
-        if loop_cnt % 30 == 29 {
+        if loop_cnt % 5 == 1 {
             info!("full update");
             display.display_frame_full_update();
         } else {
@@ -173,7 +180,7 @@ async fn main(_spawner: Spawner) {
         }
         display.clear(WHITE);
 
-        Timer::after(Duration::from_millis(500)).await;
+        Timer::after(Duration::from_millis(5000)).await;
         led.toggle();
         info!("led toggle");
     }

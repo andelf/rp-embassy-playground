@@ -38,20 +38,13 @@ async fn jogball_task(up: AnyPin, right: AnyPin, down: AnyPin, left: AnyPin) {
     }
 }
 
-const UP: usize = 0;
-const RIGHT: usize = 1;
-const DOWN: usize = 2;
-const LEFT: usize = 3;
-
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
-    let mut led = Output::new(p.PIN_25, Level::Low);
 
+    let mut led = Output::new(p.PIN_25, Level::Low);
     let mut btn = Input::new(p.PIN_5, gpio::Pull::None);
     let mut bkled = Output::new(p.PIN_4, Level::High);
-
-    info!("io setting");
 
     spawner
         .spawn(jogball_task(
@@ -62,12 +55,15 @@ async fn main(spawner: Spawner) {
         ))
         .unwrap();
 
-    let mut state = [0; 2];
+    // EPD init
+
+
+    let mut last_pos = [0; 2];
 
     loop {
         let n = unsafe { pos };
-        if n != state {
-            state = n;
+        if n != last_pos {
+            last_pos = n;
             info!("position {:?}", n);
         }
 
