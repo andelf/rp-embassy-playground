@@ -16,7 +16,7 @@ use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::i2c::{self, Config};
 use embassy_rp::interrupt;
 use embassy_rp::spi::{self, Spi};
-use embassy_time::{Delay, Duration, Timer};
+use embassy_time::{Delay, Duration, Instant, Timer};
 // use embedded_hal_1::i2c::I2c;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -81,7 +81,7 @@ async fn main(_spawner: Spawner) {
     // let mut display: EPD<_, DisplaySize122x250, SSD1608> = EPD::new(di);
     //let mut display: EPD<_, DisplaySize104x201, IL3895> = EPD::new(di);
 
-    display.set_rotation(90);
+    display.set_rotation(270);
     display.init(&mut delay);
     display.display_frame();
 
@@ -90,32 +90,61 @@ async fn main(_spawner: Spawner) {
     let mut buf = String::<128>::new();
     let mut c = 0;
 
-    let style = MonoTextStyleBuilder::new()
+    let digit_style = MonoTextStyleBuilder::new()
         .font(&FONT_SEG7_30X48)
         .text_color(BLACK)
         .background_color(WHITE) // clear bg when drawing
         .build();
 
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_10X20)
+        .text_color(BLACK)
+        .background_color(WHITE) // clear bg when drawing
+        .build();
+
+    let boot_time = Instant::now();
+
     loop {
         buf.clear();
-        rp::format_time(c, &mut buf);
+        let elapsed = boot_time.elapsed().as_secs();
+        rp::format_time(elapsed as _, &mut buf);
         c += 1;
 
         Text::with_text_style(
             &buf,
             Point::new(2, 40), //skip 1 line
-            style,
+            digit_style,
             TextStyleBuilder::new().line_height(LineHeight::Pixels(12)).build(),
         )
         .draw(&mut display)
         .unwrap();
 
+        buf.clear();
+        let raw_temp = adc.read_temperature().await;
+        let temp = rp::convert_to_celsius(raw_temp);
+        core::write!(buf, "Temp: {:.2}'C", temp);
+
+        Text::with_alignment("Uptime:", Point::new(1, 16), text_style, Alignment::Left)
+            .draw(&mut display)
+            .unwrap();
+
+        Text::with_text_style(
+            &buf,
+            Point::new(80, 100),
+            text_style,
+            TextStyleBuilder::new().line_height(LineHeight::Pixels(12)).build(),
+        )
+        .draw(&mut display)
+        .unwrap();
+
+        info!("begin update");
         if c % 30 == 1 {
             display.display_frame_full_update();
         } else {
             display.display_frame();
         }
-        Timer::after(Duration::from_millis(900)).await;
+        info!("update done");
+        Timer::after(Duration::from_millis(10_000)).await;
     }
 
     loop {
