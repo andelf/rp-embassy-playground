@@ -51,28 +51,58 @@ impl<DI: WriteOnlyDataCommand> Display<DI> {
         Ok(())
     }
 
+    fn send_cmd(&mut self, cmd: u8) -> Result<(), DisplayError> {
+        self.di.send_commands(DataFormat::U8(&[cmd]))
+    }
+
+    fn send_cmd_data(&mut self, cmd: u8, data: &[u8]) -> Result<(), DisplayError> {
+        self.di.send_commands(DataFormat::U8(&[cmd]))?;
+        self.di.send_commands(DataFormat::U8(data))
+    }
+
     /// Initializes the display.
     pub fn init(&mut self) -> Result<(), DisplayError> {
         self.send_command(Command::DisplayOff)?;
         self.send_command(Command::ColumnAddress { start: 0, end: 127 })?;
         self.send_command(Command::RowAddress { start: 0, end: 127 })?;
         self.send_command(Command::Contrast(0x80))?;
+
+        // address remap
+
         self.send_command(Command::SetRemap(0x51))?;
+
         self.send_command(Command::StartLine(0x00))?;
         self.send_command(Command::Offset(0x00))?;
-        self.send_command(Command::DisplayModeNormal)?;
+
         self.send_command(Command::MuxRatio(0x7f))?;
-        self.send_command(Command::PhaseLength(0xf1))?;
+
+        self.send_command(Command::PhaseLength(0x11))?; // gray scale tune
+
+        // gamma setting
+        // 0xb8: SET_GRAY_SCALE_TABLE, [u8; 15]
+        // 0xb9: SET_DEFAULT_LINEAR_GRAY_SCALE_TABLE
+        //self.send_cmd_data(0xb8, &[1,2,30,40,5,6,7,8,9,10,11,12,13,14,0b11111])?;
+        self.send_cmd(0xb9)?;
+
         self.send_command(Command::FrontClockDivider(0x00))?;
         self.send_command(Command::FunctionSelectionA(0x01))?;
-        self.send_command(Command::SecondPreChargePeriod(0x0f))?;
+        self.send_command(Command::SecondPreChargePeriod(0x08))?;
         self.send_command(Command::ComVoltageLevel(0x0f))?;
         self.send_command(Command::PreChargeVoltage(0x08))?;
         self.send_command(Command::FunctionSelectionB(0x62))?;
         self.send_command(Command::CommandLock(0x12))?;
+        self.send_command(Command::DisplayModeNormal)?;
         self.send_command(Command::DisplayOn)?;
 
         Ok(())
+    }
+
+    pub fn scroll(&mut self) -> Result<(), DisplayError> {
+        // 0x26/0x27, 0, start row, speed, end row, start col, end col, 0
+        // scroll
+        self.di
+            .send_commands(DataFormat::U8(&[0x26, 0, 0x00, 0b000, 0x7f, 0x00, 0x3f, 0]))?;
+        self.send_cmd(0x2f)
     }
 
     /// Allows to send custom commands to the display.
@@ -102,7 +132,7 @@ impl<DI> DrawTarget for Display<DI> {
     {
         for pixel in pixels {
             let Pixel(point, color) = pixel;
-            if point.x >= WIDTH as _ || point.y >= HEIGHT as _ || point.x < 0 || point.y < 0 {
+            if point.x >= WIDTH as i32 || point.y >= HEIGHT as i32 || point.x < 0 || point.y < 0 {
                 continue;
             }
 

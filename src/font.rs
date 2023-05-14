@@ -43,3 +43,14 @@ pub const FONT_SEG7_30X48: MonoFont = MonoFont {
     underline: mono_font::DecorationDimensions::new(12 + 2, 1),
     strikethrough: mono_font::DecorationDimensions::new(12 / 2, 1),
 };
+
+
+pub const FONT_SEG7_16X24: MonoFont = MonoFont {
+    image: ImageRaw::new(include_bytes!("../Dseg7-16x24.raw"), 336),
+    glyph_mapping: &digits_mapping,
+    character_size: Size::new(16, 24),
+    character_spacing: 0, // in pixels
+    baseline: 22,
+    underline: mono_font::DecorationDimensions::new(12 + 2, 1),
+    strikethrough: mono_font::DecorationDimensions::new(12 / 2, 1),
+};
