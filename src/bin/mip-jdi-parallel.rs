@@ -12,7 +12,7 @@ use display_interface::{DataFormat, WriteOnlyDataCommand};
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{AnyPin, Level, Output, Pin};
 use embassy_rp::spi::{self, Spi};
-use embassy_time::{Delay, Duration, Timer};
+use embassy_time::{Delay, Duration, Instant, Timer};
 // use embedded_hal_1::i2c::I2c;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -50,6 +50,14 @@ pin22 VST
 
 // drive VCOM at 60Hz
 // FRP is the same signal as VCOM, and XFRP is the inverse signal of VCOM and FRP.
+
+/// pixel format: u8
+/// 0b00_rrggbb
+pub struct LPM012M134B {
+    pub fb: [u8; 240 * 240],
+}
+
+
 
 #[embassy_executor::task(pool_size = 1)]
 async fn vcom_drive(vcom: AnyPin, frp: AnyPin, xfrp: AnyPin) {
@@ -110,6 +118,9 @@ async fn main(spawner: Spawner) {
     Timer::after(Duration::from_micros(10)).await; // us
     info!("tick!");
 
+    info!("tick {}", Instant::now().as_ticks());
+    info!("tick {}", Instant::now().as_ticks());
+
     // reset
     xrst.set_low();
     Timer::after(Duration::from_millis(1000)).await;
@@ -120,31 +131,36 @@ async fn main(spawner: Spawner) {
     spawner
         .spawn(vcom_drive(p.PIN_14.degrade(), p.PIN_18.degrade(), p.PIN_17.degrade()))
         .unwrap();
-    info!("vcom drive started");
 
     let mut cnt = 0;
 
+    // initial state
     vck.set_low();
-    vst.set_high();
-
+    vst.set_low();
     hst.set_low();
+    hck.set_low();
 
     Timer::after(Duration::from_micros(1)).await; // us\
 
-    let mut inv = false;
+    let mut inv = true;
     // cycle 488
     loop {
         inv = !inv;
 
-        xrst.set_high();
+        xrst.set_high(); // deassert reset
+
+        Timer::after(Duration::from_micros(1)).await;
+
+        // begin frame update
 
         vst.set_high();
-        Timer::after(Duration::from_micros(1)).await; // us\
+        Timer::after(Duration::from_micros(41)).await; // tsVST, VST setup time, 41us
 
         for i in 1..=488 {
             vck.toggle(); // rising edge or falling edge
 
             if i == 1 {
+                Timer::after(Duration::from_micros(41)).await; // thVST, VST hold time, 41us
                 vst.set_low();
             }
 
@@ -155,62 +171,47 @@ async fn main(spawner: Spawner) {
                 xrst.set_high();
             }*/
 
-            if inv {
-                if i < 120 {
-                    g1.set_high();
-                    g2.set_high();
-                    b1.set_high();
-                    b2.set_high();
-                } else if i < 240 {
-                    g1.set_low();
-                    g2.set_low();
-                    b1.set_low();
-                    b2.set_low();
-                } else if i < 320 {
-                    g1.set_low();
-                    g2.set_low();
-                    b1.set_high();
-                    b2.set_high();
-                } else {
-                    g1.set_high();
-                    g2.set_high();
-                    b1.set_low();
-                    b2.set_low();
-                }
-            } else {
-                if i < 120 {
-                    g1.set_high();
-                    g2.set_high();
-                    b1.set_low();
-                    b2.set_low();
-                } else if i < 240 {
-                    g1.set_low();
-                    g2.set_low();
-                    b1.set_high();
-                    b2.set_high();
-                } else if i < 320 {
-                    g1.set_low();
-                    g2.set_low();
-                    b1.set_low();
-                    b2.set_low();
-                } else {
-                    g1.set_high();
-                    g2.set_high();
-                    b1.set_high();
-                    b2.set_high();
-                }
-            }
-
-            if i >= 3 && i <= 482 {
+            if i >= 2 && i <= 482 {
                 // 240 lines
+               // Timer::after(Duration::from_micros(1)).await; // tdHST, delay before HST
                 hst.set_high();
-                Timer::after(Duration::from_micros(1)).await; // us
+               // Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
 
-                for j in 1..=122 {
+                for j in 1..=123 {
                     hck.toggle();
 
                     if j == 1 {
+                        Timer::after(Duration::from_micros(1)).await; // thHST
                         hst.set_low();
+                    }
+
+                    if j == 1 {
+                        enb.set_high();
+                    }
+                    if j == 121 {
+                        enb.set_low();
+                    }
+
+                    if i < 120 {
+                        g1.set_high();
+                        g2.set_high();
+                        b1.set_high();
+                        b2.set_high();
+                    } else if i < 240 {
+                        g1.set_low();
+                        g2.set_low();
+                        b1.set_low();
+                        b2.set_low();
+                    } else if i < 320 {
+                        g1.set_low();
+                        g2.set_low();
+                        b1.set_high();
+                        b2.set_low();
+                    } else {
+                        g1.set_high();
+                        g2.set_high();
+                        b1.set_low();
+                        b2.set_low();
                     }
 
                     if j < 30 {
@@ -219,26 +220,28 @@ async fn main(spawner: Spawner) {
                     } else if j < 60 {
                         r1.set_low();
                         r2.set_low();
-                    } else if j < 120 {
-                        r1.set_low();
+                    } else if j < 90 {
                         r2.set_high();
+                        r2.set_high();
+                    } else {
+                        r1.set_low();
+                        r2.set_low();
                     }
 
                     // 125Mhz for 10us
                     //Timer::after(Duration::from_hz(1_000_000)).await; // us
-                    Timer::after(Duration::from_micros(1)).await; // us
+                    // Timer::after(Duration::from_micros(1)).await; // us
+                    Timer::after(Duration::from_ticks(1)).await;
                 }
-
-                enb.set_high();
-                Timer::after(Duration::from_micros(41)).await; // us
                 enb.set_low();
             } else {
-                Timer::after(Duration::from_micros(10)).await;
+                // 82
+                Timer::after(Duration::from_micros(1)).await; // 1us non-update
             }
         }
         //      xrst.set_low(); // active display no update
 
-        Timer::after(Duration::from_millis(500)).await;
+        // Timer::after(Duration::from_millis(500)).await;
         info!("toggle frame");
     }
 
