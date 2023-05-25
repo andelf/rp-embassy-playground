@@ -119,7 +119,9 @@ async fn main(spawner: Spawner) {
 
     info!("started");
 
-    let raw = include_bytes!("../../240x240.raw");
+    let raw1 = include_bytes!("../../240x240.raw");
+    //    let raw2 = include_bytes!("../../240x240.2.raw");
+    let raw2 = include_bytes!("../../color.raw");
 
     // pins
     let mut hst = Output::new(p.PIN_16, Level::Low);
@@ -207,34 +209,37 @@ async fn main(spawner: Spawner) {
                 xrst.set_high();
             }*/
 
-            if i >= 2 && i <= 482 {
+            if i >= 2 && i <= 481 {
                 // 240 lines
                 // Timer::after(Duration::from_micros(1)).await; // tdHST, delay before HST
                 hst.set_high();
-                // Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
+                Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
 
                 for j in 1..=123 {
                     hck.toggle();
 
                     if j == 1 {
-                        Timer::after(Duration::from_micros(1)).await; // thHST
+                        // Timer::after(Duration::from_micros(1)).await; // thHST
                         hst.set_low();
+                        // Timer::after(Duration::from_micros(1)).await; // thHST
                     }
 
-                    if j == 1 {
+                    if j >= 1 {
                         enb.set_high();
                     }
-                    if j == 121 {
+                    if j > 120 {
                         enb.set_low();
                     }
 
-                    y = (i - 1) / 2;
-                    x = j - 1;
+                    if j >= 1 && j <= 120 {
+                        y = (i - 2) / 2;
+                        x = j - 1;
 
-                    let pos = (x * 2) + 240 * y;
+                        let pos = (x * 2) + 240 * y;
+                        let raw = if inv { raw1 } else { raw2 };
+                        // info!("x {} y{}, {}", x, y, pos);
 
-                    if i % 2 == 0 {
-                        if pos < 57600 {
+                        if i % 2 == 1 {
                             let pixel = raw[pos];
                             if pixel & 0b10_00_00 != 0 {
                                 r1.set_high();
@@ -255,25 +260,23 @@ async fn main(spawner: Spawner) {
                             }
                             let pixel = raw[pos + 1];
                             if pixel & 0b10_00_00 != 0 {
-                                r1.set_high();
+                                r2.set_high();
                             } else {
-                                r1.set_low();
+                                r2.set_low();
                             }
 
                             if pixel & 0b00_10_00 != 0 {
-                                g1.set_high();
+                                g2.set_high();
                             } else {
-                                g1.set_low();
+                                g2.set_low();
                             }
 
                             if pixel & 0b00_00_10 != 0 {
-                                b1.set_high();
+                                b2.set_high();
                             } else {
-                                b1.set_low();
+                                b2.set_low();
                             }
-                        }
-                    } else {
-                        if pos < 57600 {
+                        } else {
                             let pixel = raw[pos];
                             if pixel & 0b01_00_00 != 0 {
                                 r1.set_high();
@@ -294,39 +297,39 @@ async fn main(spawner: Spawner) {
                             }
                             let pixel = raw[pos + 1];
                             if pixel & 0b01_00_00 != 0 {
-                                r1.set_high();
+                                r2.set_high();
                             } else {
-                                r1.set_low();
+                                r2.set_low();
                             }
 
                             if pixel & 0b00_01_00 != 0 {
-                                g1.set_high();
+                                g2.set_high();
                             } else {
-                                g1.set_low();
+                                g2.set_low();
                             }
 
                             if pixel & 0b00_00_01 != 0 {
-                                b1.set_high();
+                                b2.set_high();
                             } else {
-                                b1.set_low();
+                                b2.set_low();
                             }
                         }
                     }
 
                     // 125Mhz for 10us
                     //Timer::after(Duration::from_hz(1_000_000)).await; // us
-                    // Timer::after(Duration::from_micros(1)).await; // us
-                    Timer::after(Duration::from_ticks(1)).await;
+                    //Timer::after(Duration::from_micros(1)).await; // us
+                    //                    Timer::after(Duration::from_ticks(1)).await;
+                    Delay.delay_us(1_u32);
                 }
-                enb.set_low();
             } else {
                 // 82
                 Timer::after(Duration::from_micros(1)).await; // 1us non-update
             }
         }
-        //      xrst.set_low(); // active display no update
+        // xrst.set_low(); // active display no update
 
-        Timer::after(Duration::from_millis(100)).await;
+        Timer::after(Duration::from_millis(1000)).await;
         info!("toggle frame");
     }
 
