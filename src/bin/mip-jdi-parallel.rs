@@ -216,9 +216,9 @@ async fn main(spawner: Spawner) {
 
                 hst.set_high();
                 Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
+                hck.toggle(); // trigger hst
 
                 for j in 1..=123 {
-                    hck.toggle();
                     if j == 1 {
                         hst.set_low();
                         Timer::after(Duration::from_micros(1)).await; // thHST
@@ -237,7 +237,7 @@ async fn main(spawner: Spawner) {
                         let pos = (x * 2) + 240 * y;
                         let raw = if inv { raw1 } else { raw2 };
 
-                        if i % 2 == 0 {
+                        if i % 2 == 1 {
                             // LPB
                             let pixel = raw[pos];
                             if pixel & 0b10_00_00 != 0 {
@@ -316,6 +316,7 @@ async fn main(spawner: Spawner) {
                         }
                     }
 
+                    hck.toggle();
                     //Timer::after(Duration::from_hz(1_000_000)).await; // us
                     // Timer::after(Duration::from_micros(5)).await; // us
 
