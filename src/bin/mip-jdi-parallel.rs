@@ -120,8 +120,9 @@ async fn main(spawner: Spawner) {
     info!("started");
 
     let raw1 = include_bytes!("../../240x240.raw");
-    //    let raw2 = include_bytes!("../../240x240.2.raw");
-    let raw2 = include_bytes!("../../color.raw");
+    // let raw2 = include_bytes!("../../240x240.2.raw");
+    //let raw2 = include_bytes!("../../color.raw");
+    let raw2 = include_bytes!("../../test.raw");
 
     // pins
     let mut hst = Output::new(p.PIN_16, Level::Low);
@@ -186,20 +187,20 @@ async fn main(spawner: Spawner) {
         inv = !inv;
 
         xrst.set_high(); // deassert reset
-
-        Timer::after(Duration::from_micros(1)).await;
+        Timer::after(Duration::from_micros(22)).await;
 
         // begin frame update
 
         vst.set_high();
-        Timer::after(Duration::from_micros(21)).await; // tsVST, VST setup time, 41us
+        Timer::after(Duration::from_micros(41)).await; // tsVST, VST setup time, 41us
+                                                       // cortex_m::asm::delay(5000);
 
         for i in 1..=488 {
             vck.toggle(); // rising edge or falling edge
 
             if i == 1 {
-                Timer::after(Duration::from_micros(21)).await; // thVST, VST hold time, 41us
                 vst.set_low();
+                Timer::after(Duration::from_micros(40)).await; // thVST, VST hold time, 41us
             }
 
             /*  if i == 485 {
@@ -209,38 +210,35 @@ async fn main(spawner: Spawner) {
                 xrst.set_high();
             }*/
 
-            if i >= 2 && i <= 481 {
+            if i >= 1 && i <= 480 {
                 // 240 lines
                 // Timer::after(Duration::from_micros(1)).await; // tdHST, delay before HST
 
                 hst.set_high();
-//                Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
+                Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
 
                 for j in 1..=123 {
                     hck.toggle();
-
                     if j == 1 {
-                        // Timer::after(Duration::from_micros(1)).await; // thHST
                         hst.set_low();
-                        // Timer::after(Duration::from_micros(1)).await; // thHST
+                        Timer::after(Duration::from_micros(1)).await; // thHST
                     }
 
-                    if j >= 1 {
+                    if j == 120 {
                         enb.set_high();
-                    }
-                    if j > 120 {
+                    } else if j == 123 {
                         enb.set_low();
                     }
 
                     if j >= 1 && j <= 120 {
-                        y = (i - 2) / 2;
+                        y = (i - 1) / 2;
                         x = j - 1;
 
                         let pos = (x * 2) + 240 * y;
                         let raw = if inv { raw1 } else { raw2 };
-                        // info!("x {} y{}, {}", x, y, pos);
 
                         if i % 2 == 0 {
+                            // LPB
                             let pixel = raw[pos];
                             if pixel & 0b10_00_00 != 0 {
                                 r1.set_high();
@@ -278,6 +276,7 @@ async fn main(spawner: Spawner) {
                                 b2.set_low();
                             }
                         } else {
+                            // SPB
                             let pixel = raw[pos];
                             if pixel & 0b01_00_00 != 0 {
                                 r1.set_high();
@@ -317,20 +316,21 @@ async fn main(spawner: Spawner) {
                         }
                     }
 
-                    // 125Mhz for 10us
                     //Timer::after(Duration::from_hz(1_000_000)).await; // us
-                    Timer::after(Duration::from_micros(1)).await; // us
-                    //                    Timer::after(Duration::from_ticks(1)).await;
-                    Delay.delay_us(1_u32);
+                    // Timer::after(Duration::from_micros(5)).await; // us
+
+                    //Timer::after(Duration::from_ticks(1)).await;
+                    //Delay.delay_us(1_u32);
+                    cortex_m::asm::delay(200);
                 }
             } else {
                 // 82
                 Timer::after(Duration::from_micros(1)).await; // 1us non-update
             }
         }
-        // xrst.set_low(); // active display no update
+        xrst.set_low(); // active display no update
 
-        Timer::after(Duration::from_millis(500)).await;
+        Timer::after(Duration::from_millis(1000)).await;
         info!("toggle frame");
     }
 
