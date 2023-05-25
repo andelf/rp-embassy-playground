@@ -120,9 +120,10 @@ async fn main(spawner: Spawner) {
     info!("started");
 
     let raw1 = include_bytes!("../../240x240.raw");
-    // let raw2 = include_bytes!("../../240x240.2.raw");
+    //let raw2 = include_bytes!("../../240x240.2.raw");
     //let raw2 = include_bytes!("../../color.raw");
-    let raw2 = include_bytes!("../../test.raw");
+    //let raw2 = include_bytes!("../../test.raw");
+    let raw2 = include_bytes!("../../hot.raw");
 
     // pins
     let mut hst = Output::new(p.PIN_16, Level::Low);
@@ -182,25 +183,23 @@ async fn main(spawner: Spawner) {
     let mut y = 0;
 
     let mut inv = true;
-    // cycle 488
+
     loop {
         inv = !inv;
 
         xrst.set_high(); // deassert reset
-        Timer::after(Duration::from_micros(22)).await;
-
-        // begin frame update
+        Timer::after(Duration::from_micros(22)).await; // wait reset
 
         vst.set_high();
-        Timer::after(Duration::from_micros(41)).await; // tsVST, VST setup time, 41us
-                                                       // cortex_m::asm::delay(5000);
+        Timer::after(Duration::from_micros(1)).await; // tsVST, VST setup time, 41us
+                                                      // cortex_m::asm::delay(5000);
 
         for i in 1..=488 {
             vck.toggle(); // rising edge or falling edge
 
             if i == 1 {
                 vst.set_low();
-                Timer::after(Duration::from_micros(40)).await; // thVST, VST hold time, 41us
+                Timer::after(Duration::from_micros(1)).await; // thVST, VST hold time, 41us
             }
 
             /*  if i == 485 {
@@ -320,7 +319,6 @@ async fn main(spawner: Spawner) {
                     hck.toggle();
                     //Timer::after(Duration::from_hz(1_000_000)).await; // us
                     // Timer::after(Duration::from_micros(5)).await; // us
-
                     //Timer::after(Duration::from_ticks(1)).await;
                     //Delay.delay_us(1_u32);
                 }
@@ -333,189 +331,6 @@ async fn main(spawner: Spawner) {
 
         Timer::after(Duration::from_millis(500)).await;
         info!("toggle frame");
-    }
-
-    /*
-        cnt += 1;
-        vck.set_low();
-        vst.set_high();
-        Timer::after(Duration::from_micros(40)).await; // us
-        vst.set_low();
-
-        for i in 1..=488 {
-            vck.toggle();
-
-            Timer::after(Duration::from_micros(10)).await; // us
-
-            // vck.set_low();
-
-            hst.set_high();
-            Timer::after(Duration::from_micros(1)).await; // us
-
-            for j in 1..=122 {
-                if j < 30 {
-                    r2.set_high();
-                    g2.set_low();
-                    b2.set_low();
-                } else if j < 60 {
-                    r2.set_high();
-                    g2.set_high();
-                    b2.set_high();
-                } else if j < 90 {
-                    r2.set_low();
-                    g2.set_low();
-                    b2.set_high();
-                } else {
-                    r2.set_low();
-                    g2.set_high();
-                    b2.set_low();
-                }
-
-                if j == 1 {
-                    enb.set_low();
-                    hst.set_low();
-                } else if j >= 121 {
-                    enb.set_high();
-                }
-
-                Timer::after(Duration::from_micros(1)).await;
-                hck.toggle();
-                // us
-                //  if j == 1 {
-                //     hst.set_low();
-                // }
-                // hck.set_low();
-                //Timer::after(Duration::from_micros(1)).await; // us
-            }
-        }
-        info!("toggle");
-        Timer::after(Duration::from_millis(100)).await;
-    }
-    */
-
-    let mut rev = false;
-    loop {
-        info!("toggle");
         led.toggle();
-        rev = !rev;
-        Timer::after(Duration::from_millis(1000)).await;
     }
 }
-
-/*
-    // hard reset
-    reset.set_low();
-    Timer::after(Duration::from_millis(10)).await;
-    reset.set_high();
-    Timer::after(Duration::from_millis(100)).await;
-
-    // on to MM
-    dcx.set_low(); // command
-    spi.blocking_write(&[0x01]); // soft reset
-
-    Timer::after(Duration::from_millis(20)).await; // > 10ms
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xff]);
-    dcx.set_high();
-    spi.blocking_write(&[0x20]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xfb]);
-    dcx.set_high();
-    spi.blocking_write(&[0x01]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0x6d]);
-    dcx.set_high();
-    spi.blocking_write(&[0x74]);
-
-    // select CMD1
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xff]);
-    dcx.set_high();
-    spi.blocking_write(&[0x10]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xfb]);
-    dcx.set_high();
-    spi.blocking_write(&[0x01]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xb3]);
-    dcx.set_high();
-    spi.blocking_write(&[0x15]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xbb]);
-    dcx.set_high();
-    spi.blocking_write(&[0x10]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xf3]);
-    dcx.set_high();
-    spi.blocking_write(&[0x02]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0x3a]);
-    dcx.set_high();
-    spi.blocking_write(&[0x05]); // color format, 16bit 0x05
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0x11]); // sleep out
-    dcx.set_high();
-
-    Timer::after(Duration::from_millis(20)).await; // > 10ms
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0x2c]);
-    spi.blocking_write(&[0xaa; 300 * 2]);
-    dcx.set_high();
-
-    for i in 0..300 {
-        dcx.set_low(); // command
-        spi.blocking_write(&[0x3c]);
-        spi.blocking_write(&[0xaa; 300 * 2]);
-        dcx.set_high();
-    }
-
-    Timer::after(Duration::from_millis(140)).await; // > 120ms
-
-    cs.set_low();
-    dcx.set_low(); // command
-    spi.blocking_write(&[0x29]); // display on
-    dcx.set_high();
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xbb]);
-    dcx.set_high();
-    spi.blocking_write(&[0x00]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xb3]);
-    dcx.set_high();
-    spi.blocking_write(&[0x35]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0xff]);
-    dcx.set_high();
-    spi.blocking_write(&[0x20]);
-
-    dcx.set_low(); // command
-    spi.blocking_write(&[0x0b]);
-    dcx.set_high();
-    spi.blocking_write(&[0x00]);
-
-    // in memory mode
-
-    let mut b = 1;
-    let mut rev = false;
-    loop {
-        info!("toggle");
-        led.toggle();
-        rev = !rev;
-        Timer::after(Duration::from_millis(1000)).await;
-    }
-}
-
-*/
