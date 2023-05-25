@@ -181,14 +181,13 @@ async fn main(spawner: Spawner) {
 
         vck.set_low();
         vst.set_high();
-        Timer::after(Duration::from_micros(10)).await; // tsVST, VST setup time, 41us, must
+        Timer::after(Duration::from_micros(20)).await; // tsVST, VST setup time, 41us, must
 
         for i in 1..=488 {
             vck.toggle(); // rising edge or falling edge
-
             if i == 1 {
                 vst.set_low();
-                //   Timer::after(Duration::from_micros(1)).await; // thVST, VST hold time, 41us
+                Timer::after(Duration::from_micros(41)).await; // thVST, VST hold time, 41us, must
             }
 
             if i >= 1 && i <= 480 {
@@ -310,8 +309,12 @@ async fn main(spawner: Spawner) {
                 Timer::after(Duration::from_micros(1)).await; // 1us non-update
             }
         }
+        hck.set_low();
+        hst.set_low();
+        vck.set_low();
+
         //xrst.set_low(); // active display no update
-        //Timer::after(Duration::from_millis(500)).await;
+        // Timer::after(Duration::from_millis(500)).await;
         info!("toggle frame");
         led.toggle();
     }
