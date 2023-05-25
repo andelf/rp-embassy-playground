@@ -192,13 +192,13 @@ async fn main(spawner: Spawner) {
         // begin frame update
 
         vst.set_high();
-        Timer::after(Duration::from_micros(41)).await; // tsVST, VST setup time, 41us
+        Timer::after(Duration::from_micros(21)).await; // tsVST, VST setup time, 41us
 
         for i in 1..=488 {
             vck.toggle(); // rising edge or falling edge
 
             if i == 1 {
-                Timer::after(Duration::from_micros(41)).await; // thVST, VST hold time, 41us
+                Timer::after(Duration::from_micros(21)).await; // thVST, VST hold time, 41us
                 vst.set_low();
             }
 
@@ -212,8 +212,9 @@ async fn main(spawner: Spawner) {
             if i >= 2 && i <= 481 {
                 // 240 lines
                 // Timer::after(Duration::from_micros(1)).await; // tdHST, delay before HST
+
                 hst.set_high();
-                Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
+//                Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
 
                 for j in 1..=123 {
                     hck.toggle();
@@ -239,7 +240,7 @@ async fn main(spawner: Spawner) {
                         let raw = if inv { raw1 } else { raw2 };
                         // info!("x {} y{}, {}", x, y, pos);
 
-                        if i % 2 == 1 {
+                        if i % 2 == 0 {
                             let pixel = raw[pos];
                             if pixel & 0b10_00_00 != 0 {
                                 r1.set_high();
@@ -318,7 +319,7 @@ async fn main(spawner: Spawner) {
 
                     // 125Mhz for 10us
                     //Timer::after(Duration::from_hz(1_000_000)).await; // us
-                    //Timer::after(Duration::from_micros(1)).await; // us
+                    Timer::after(Duration::from_micros(1)).await; // us
                     //                    Timer::after(Duration::from_ticks(1)).await;
                     Delay.delay_us(1_u32);
                 }
@@ -329,7 +330,7 @@ async fn main(spawner: Spawner) {
         }
         // xrst.set_low(); // active display no update
 
-        Timer::after(Duration::from_millis(1000)).await;
+        Timer::after(Duration::from_millis(500)).await;
         info!("toggle frame");
     }
 
