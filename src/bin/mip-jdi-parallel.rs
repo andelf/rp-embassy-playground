@@ -87,7 +87,7 @@ async fn main(spawner: Spawner) {
     let mut enb = Output::new(p.PIN_20, Level::Low);
 
     let mut vst = Output::new(p.PIN_22, Level::High);
-    let mut xrst = Output::new(p.PIN_19, Level::High);
+    let mut xrst = Output::new(p.PIN_19, Level::Low);
     let mut vck = Output::new(p.PIN_21, Level::High);
 
     // Common electrode driving signal
@@ -95,72 +95,210 @@ async fn main(spawner: Spawner) {
     //let mut frp = Output::new(p.PIN_18, Level::Low);
     //let mut xfrp = Output::new(p.PIN_17, Level::Low);
     // vcom drive
-    spawner
-        .spawn(vcom_drive(p.PIN_14.degrade(), p.PIN_18.degrade(), p.PIN_17.degrade()))
-        .unwrap();
 
-    info!("vcom drive started");
-
-    let mut r1 = Output::new(p.PIN_7, Level::High);
-    let mut r2 = Output::new(p.PIN_8, Level::High);
+    let mut r1 = Output::new(p.PIN_7, Level::Low);
+    let mut r2 = Output::new(p.PIN_8, Level::Low);
     let mut g1 = Output::new(p.PIN_9, Level::Low);
-    let mut g2 = Output::new(p.PIN_10, Level::High);
-    let mut b1 = Output::new(p.PIN_11, Level::High);
+    let mut g2 = Output::new(p.PIN_10, Level::Low);
+    let mut b1 = Output::new(p.PIN_11, Level::Low);
     let mut b2 = Output::new(p.PIN_12, Level::Low);
 
     info!("io init ok");
 
     // update mode
     info!("tick?");
-    Timer::after(Duration::from_micros(200)).await; // us
+    Timer::after(Duration::from_micros(10)).await; // us
     info!("tick!");
 
     // reset
     xrst.set_low();
-    Timer::after(Duration::from_millis(10)).await; // us\
-    xrst.set_high();
+    Timer::after(Duration::from_millis(1000)).await;
+    xrst.set_high(); //active
 
+    info!("reset ok");
+
+    spawner
+        .spawn(vcom_drive(p.PIN_14.degrade(), p.PIN_18.degrade(), p.PIN_17.degrade()))
+        .unwrap();
+    info!("vcom drive started");
 
     let mut cnt = 0;
 
+    vck.set_low();
+    vst.set_high();
+
+    hst.set_low();
+
+    Timer::after(Duration::from_micros(1)).await; // us\
+
+    let mut inv = false;
+    // cycle 488
     loop {
+        inv = !inv;
+
+        xrst.set_high();
+
+        vst.set_high();
+        Timer::after(Duration::from_micros(1)).await; // us\
+
+        for i in 1..=488 {
+            vck.toggle(); // rising edge or falling edge
+
+            if i == 1 {
+                vst.set_low();
+            }
+
+            /*  if i == 485 {
+                xrst.set_low();
+            }
+            if i == 488 {
+                xrst.set_high();
+            }*/
+
+            if inv {
+                if i < 120 {
+                    g1.set_high();
+                    g2.set_high();
+                    b1.set_high();
+                    b2.set_high();
+                } else if i < 240 {
+                    g1.set_low();
+                    g2.set_low();
+                    b1.set_low();
+                    b2.set_low();
+                } else if i < 320 {
+                    g1.set_low();
+                    g2.set_low();
+                    b1.set_high();
+                    b2.set_high();
+                } else {
+                    g1.set_high();
+                    g2.set_high();
+                    b1.set_low();
+                    b2.set_low();
+                }
+            } else {
+                if i < 120 {
+                    g1.set_high();
+                    g2.set_high();
+                    b1.set_low();
+                    b2.set_low();
+                } else if i < 240 {
+                    g1.set_low();
+                    g2.set_low();
+                    b1.set_high();
+                    b2.set_high();
+                } else if i < 320 {
+                    g1.set_low();
+                    g2.set_low();
+                    b1.set_low();
+                    b2.set_low();
+                } else {
+                    g1.set_high();
+                    g2.set_high();
+                    b1.set_high();
+                    b2.set_high();
+                }
+            }
+
+            if i >= 3 && i <= 482 {
+                // 240 lines
+                hst.set_high();
+                Timer::after(Duration::from_micros(1)).await; // us
+
+                for j in 1..=122 {
+                    hck.toggle();
+
+                    if j == 1 {
+                        hst.set_low();
+                    }
+
+                    if j < 30 {
+                        r1.set_high();
+                        r2.set_high();
+                    } else if j < 60 {
+                        r1.set_low();
+                        r2.set_low();
+                    } else if j < 120 {
+                        r1.set_low();
+                        r2.set_high();
+                    }
+
+                    // 125Mhz for 10us
+                    //Timer::after(Duration::from_hz(1_000_000)).await; // us
+                    Timer::after(Duration::from_micros(1)).await; // us
+                }
+
+                enb.set_high();
+                Timer::after(Duration::from_micros(41)).await; // us
+                enb.set_low();
+            } else {
+                Timer::after(Duration::from_micros(10)).await;
+            }
+        }
+        //      xrst.set_low(); // active display no update
+
+        Timer::after(Duration::from_millis(500)).await;
+        info!("toggle frame");
+    }
+
+    /*
         cnt += 1;
+        vck.set_low();
         vst.set_high();
         Timer::after(Duration::from_micros(40)).await; // us
         vst.set_low();
 
-        if cnt % 2== 0 {
-            r1.toggle();
-        }
+        for i in 1..=488 {
+            vck.toggle();
 
-        for i in 0..488 {
-            vck.set_high();
+            Timer::after(Duration::from_micros(10)).await; // us
 
-            Timer::after(Duration::from_micros(40)).await; // us
-
-            vck.set_low();
+            // vck.set_low();
 
             hst.set_high();
+            Timer::after(Duration::from_micros(1)).await; // us
 
             for j in 1..=122 {
+                if j < 30 {
+                    r2.set_high();
+                    g2.set_low();
+                    b2.set_low();
+                } else if j < 60 {
+                    r2.set_high();
+                    g2.set_high();
+                    b2.set_high();
+                } else if j < 90 {
+                    r2.set_low();
+                    g2.set_low();
+                    b2.set_high();
+                } else {
+                    r2.set_low();
+                    g2.set_high();
+                    b2.set_low();
+                }
+
                 if j == 1 {
                     enb.set_low();
-                } else if j == 121 {
+                    hst.set_low();
+                } else if j >= 121 {
                     enb.set_high();
                 }
-                hck.set_high();
-                Timer::after(Duration::from_micros(1)).await; // us
-                if j == 1 {
-                    hst.set_low();
-                }
-                hck.set_low();
-                Timer::after(Duration::from_micros(1)).await; // us
+
+                Timer::after(Duration::from_micros(1)).await;
+                hck.toggle();
+                // us
+                //  if j == 1 {
+                //     hst.set_low();
+                // }
+                // hck.set_low();
+                //Timer::after(Duration::from_micros(1)).await; // us
             }
         }
-        Timer::after(Duration::from_millis(10)).await;
-
         info!("toggle");
+        Timer::after(Duration::from_millis(100)).await;
     }
+    */
 
     let mut rev = false;
     loop {
