@@ -190,15 +190,17 @@ async fn main(spawner: Spawner) {
                 Timer::after(Duration::from_micros(41)).await; // thVST, VST hold time, 41us, must
             }
 
-            if i >= 1 && i <= 480 {
+            if i >= 2 && i < 482 {
                 // 240 lines
                 // Timer::after(Duration::from_micros(1)).await; // tdHST, delay before HST
 
+                hck.toggle();
                 hst.set_high();
                 //Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
+                Timer::after(Duration::from_micros(1)).await; // thHST, must
                 hck.toggle(); // trigger hst
 
-                for j in 1..=123 {
+                for j in 1..=124 {
                     if j == 1 {
                         hst.set_low();
                         Timer::after(Duration::from_micros(1)).await; // thHST, must
@@ -211,7 +213,7 @@ async fn main(spawner: Spawner) {
                     }
 
                     if j >= 1 && j <= 120 {
-                        y = (i - 1) / 2;
+                        y = (i - 2) / 2;
                         x = j - 1;
 
                         let pos = (x * 2) + 240 * y;
@@ -314,7 +316,7 @@ async fn main(spawner: Spawner) {
         vck.set_low();
 
         //xrst.set_low(); // active display no update
-        // Timer::after(Duration::from_millis(500)).await;
+        Timer::after(Duration::from_millis(500)).await;
         info!("toggle frame");
         led.toggle();
     }
