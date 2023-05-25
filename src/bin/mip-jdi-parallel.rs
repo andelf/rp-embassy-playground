@@ -125,8 +125,8 @@ async fn main(spawner: Spawner) {
     let raw1 = include_bytes!("../../240x240.raw");
     //let raw2 = include_bytes!("../../240x240.2.raw");
     //let raw2 = include_bytes!("../../color.raw");
-    //let raw2 = include_bytes!("../../test.raw");
-    let raw2 = include_bytes!("../../hot.raw");
+    let raw2 = include_bytes!("../../test.raw");
+    //let raw2 = include_bytes!("../../hot.raw");
 
     // pins
     let mut hst = Output::new(p.PIN_16, Level::Low);
@@ -190,25 +190,26 @@ async fn main(spawner: Spawner) {
                 Timer::after(Duration::from_micros(41)).await; // thVST, VST hold time, 41us, must
             }
 
-            if i >= 2 && i < 482 {
+            if i >= 2 && i <= 481 {
                 // 240 lines
                 // Timer::after(Duration::from_micros(1)).await; // tdHST, delay before HST
 
-                hck.toggle();
-                hst.set_high();
-                //Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
-                Timer::after(Duration::from_micros(1)).await; // thHST, must
-                hck.toggle(); // trigger hst
+                //                hck.toggle();
+                //              hst.set_high();
+                //            Timer::after(Duration::from_micros(1)).await; // thHST, must
+                //          hck.toggle(); // trigger hst
 
-                for j in 1..=124 {
+                hck.toggle();
+                for j in 1..=123 {
                     if j == 1 {
+                        hst.set_high();
+                    } else if j == 2 {
                         hst.set_low();
-                        Timer::after(Duration::from_micros(1)).await; // thHST, must
                     }
 
-                    if j == 1 {
+                    if j == 2 {
                         enb.set_high();
-                    } else if j == 10 {
+                    } else if j == 20 {
                         enb.set_low();
                     }
 
@@ -298,13 +299,17 @@ async fn main(spawner: Spawner) {
                         }
                     }
 
-                    // cortex_m::asm::delay(150);
+                    //Delay.delay_us(1_u32);
+                    // future::ready(()).await;
+                    //Timer::after(Duration::from_ticks()).await;
+                    cortex_m::asm::delay(100);
                     hck.toggle();
+                    // cortex_m::asm::delay(150);
+
                     //Timer::after(Duration::from_hz(1_000_000)).await; // us
                     // Timer::after(Duration::from_micros(5)).await; // us
                     //Timer::after(Duration::from_ticks(1)).await;
-                    //Delay.delay_us(1_u32);
-                    future::ready(()).await;
+                    //future::ready(()).await;
                 }
             } else {
                 // 82
