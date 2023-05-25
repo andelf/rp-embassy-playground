@@ -6,6 +6,7 @@
 #![allow(unused_must_use)]
 
 use core::fmt::Write;
+use core::future;
 
 use defmt::*;
 use display_interface::{DataFormat, WriteOnlyDataCommand};
@@ -31,17 +32,19 @@ use embedded_graphics::{
 use embedded_hal::prelude::{_embedded_hal_blocking_delay_DelayMs, _embedded_hal_blocking_delay_DelayUs};
 
 /*
-pin22 VST
-21 VCK
-20 ENB
 19 XRST
+
+22 VST
+21 VCK
+
+14 VCOM - VCOM is driven by gpio
 18 FRP
 17 XFRP
 
+20 ENB
 16 HST
-
-
 6 HCK
+
 7 R1
 8 R2
 9 G1
@@ -151,32 +154,15 @@ async fn main(spawner: Spawner) {
 
     info!("io init ok");
 
-    // update mode
-    info!("tick?");
-    Timer::after(Duration::from_micros(10)).await; // us
-    info!("tick!");
-
-    info!("tick {}", Instant::now().as_ticks());
-    info!("tick {}", Instant::now().as_ticks());
-
-    // reset
-    xrst.set_low();
-    Timer::after(Duration::from_millis(1000)).await;
-    xrst.set_high(); //active
-
-    info!("reset ok");
-
-    spawner
-        .spawn(vcom_drive(p.PIN_14.degrade(), p.PIN_18.degrade(), p.PIN_17.degrade()))
-        .unwrap();
-
-    let mut cnt = 0;
-
     // initial state
     vck.set_low();
     vst.set_low();
     hst.set_low();
     hck.set_low();
+
+    spawner
+        .spawn(vcom_drive(p.PIN_14.degrade(), p.PIN_18.degrade(), p.PIN_17.degrade()))
+        .unwrap();
 
     Timer::after(Duration::from_micros(1)).await; // us\
     let mut x = 0;
@@ -184,30 +170,26 @@ async fn main(spawner: Spawner) {
 
     let mut inv = true;
 
+    xrst.set_high(); // deassert reset
+    Timer::after(Duration::from_micros(22)).await;
+
     loop {
         inv = !inv;
 
-        xrst.set_high(); // deassert reset
-        Timer::after(Duration::from_micros(22)).await; // wait reset
+        // xrst.set_high(); // deassert reset
+        // Timer::after(Duration::from_micros(22)).await; // XRST set-up time
 
+        vck.set_low();
         vst.set_high();
-        Timer::after(Duration::from_micros(1)).await; // tsVST, VST setup time, 41us
-                                                      // cortex_m::asm::delay(5000);
+        Timer::after(Duration::from_micros(10)).await; // tsVST, VST setup time, 41us, must
 
         for i in 1..=488 {
             vck.toggle(); // rising edge or falling edge
 
             if i == 1 {
                 vst.set_low();
-                Timer::after(Duration::from_micros(1)).await; // thVST, VST hold time, 41us
+                //   Timer::after(Duration::from_micros(1)).await; // thVST, VST hold time, 41us
             }
-
-            /*  if i == 485 {
-                xrst.set_low();
-            }
-            if i == 488 {
-                xrst.set_high();
-            }*/
 
             if i >= 1 && i <= 480 {
                 // 240 lines
@@ -220,7 +202,7 @@ async fn main(spawner: Spawner) {
                 for j in 1..=123 {
                     if j == 1 {
                         hst.set_low();
-                        Timer::after(Duration::from_micros(1)).await; // thHST
+                        Timer::after(Duration::from_micros(1)).await; // thHST, must
                     }
 
                     if j == 1 {
@@ -321,15 +303,15 @@ async fn main(spawner: Spawner) {
                     // Timer::after(Duration::from_micros(5)).await; // us
                     //Timer::after(Duration::from_ticks(1)).await;
                     //Delay.delay_us(1_u32);
+                    future::ready(()).await;
                 }
             } else {
                 // 82
                 Timer::after(Duration::from_micros(1)).await; // 1us non-update
             }
         }
-        xrst.set_low(); // active display no update
-
-        Timer::after(Duration::from_millis(500)).await;
+        //xrst.set_low(); // active display no update
+        //Timer::after(Duration::from_millis(500)).await;
         info!("toggle frame");
         led.toggle();
     }
