@@ -1,4 +1,4 @@
-//! Memory LCD - LPM013M126A
+//! Memory LCD - LPM013M126A drive
 
 #![no_std]
 #![no_main]
@@ -17,7 +17,9 @@ use embassy_time::{Delay, Duration, Instant, Timer};
 use {defmt_rtt as _, panic_probe as _};
 
 use display_interface_spi::SPIInterface;
+use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics::prelude::*;
+use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
@@ -57,7 +59,37 @@ pub struct LPM012M134B {
     pub fb: [u8; 240 * 240],
 }
 
+impl LPM012M134B {
+    pub fn new() -> Self {
+        Self { fb: [0u8; 240 * 240] }
+    }
+}
 
+impl Dimensions for LPM012M134B {
+    fn bounding_box(&self) -> Rectangle {
+        Rectangle::new(Point::new(1, 1), Size::new(240, 240))
+    }
+}
+
+impl DrawTarget for LPM012M134B {
+    type Color = Rgb565;
+
+    type Error = ();
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Pixel<Self::Color>>,
+    {
+        for Pixel(coord, color) in pixels.into_iter() {
+            if let Ok((x @ 1..=240, y @ 1..=240)) = coord.try_into() {
+                let pos = (y * 240 + x) as usize;
+                let raw_color = ((color.r() >> 3) << 4) | ((color.g() >> 4) << 2) | (color.b() >> 3);
+                self.fb[pos] = raw_color;
+            }
+        }
+        Ok(())
+    }
+}
 
 #[embassy_executor::task(pool_size = 1)]
 async fn vcom_drive(vcom: AnyPin, frp: AnyPin, xfrp: AnyPin) {
@@ -86,6 +118,8 @@ async fn main(spawner: Spawner) {
     let mut led = Output::new(p.PIN_25, Level::Low);
 
     info!("started");
+
+    let raw = include_bytes!("../../240x240.raw");
 
     // pins
     let mut hst = Output::new(p.PIN_16, Level::Low);
@@ -141,6 +175,8 @@ async fn main(spawner: Spawner) {
     hck.set_low();
 
     Timer::after(Duration::from_micros(1)).await; // us\
+    let mut x = 0;
+    let mut y = 0;
 
     let mut inv = true;
     // cycle 488
@@ -173,9 +209,9 @@ async fn main(spawner: Spawner) {
 
             if i >= 2 && i <= 482 {
                 // 240 lines
-               // Timer::after(Duration::from_micros(1)).await; // tdHST, delay before HST
+                // Timer::after(Duration::from_micros(1)).await; // tdHST, delay before HST
                 hst.set_high();
-               // Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
+                // Timer::after(Duration::from_micros(1)).await; // tsHST, HST setup time
 
                 for j in 1..=123 {
                     hck.toggle();
@@ -192,40 +228,89 @@ async fn main(spawner: Spawner) {
                         enb.set_low();
                     }
 
-                    if i < 120 {
-                        g1.set_high();
-                        g2.set_high();
-                        b1.set_high();
-                        b2.set_high();
-                    } else if i < 240 {
-                        g1.set_low();
-                        g2.set_low();
-                        b1.set_low();
-                        b2.set_low();
-                    } else if i < 320 {
-                        g1.set_low();
-                        g2.set_low();
-                        b1.set_high();
-                        b2.set_low();
-                    } else {
-                        g1.set_high();
-                        g2.set_high();
-                        b1.set_low();
-                        b2.set_low();
-                    }
+                    y = (i - 1) / 2;
+                    x = j - 1;
 
-                    if j < 30 {
-                        r1.set_high();
-                        r2.set_high();
-                    } else if j < 60 {
-                        r1.set_low();
-                        r2.set_low();
-                    } else if j < 90 {
-                        r2.set_high();
-                        r2.set_high();
+                    let pos = (x * 2) + 240 * y;
+
+                    if i % 2 == 0 {
+                        if pos < 57600 {
+                            let pixel = raw[pos];
+                            if pixel & 0b10_00_00 != 0 {
+                                r1.set_high();
+                            } else {
+                                r1.set_low();
+                            }
+
+                            if pixel & 0b00_10_00 != 0 {
+                                g1.set_high();
+                            } else {
+                                g1.set_low();
+                            }
+
+                            if pixel & 0b00_00_10 != 0 {
+                                b1.set_high();
+                            } else {
+                                b1.set_low();
+                            }
+                            let pixel = raw[pos + 1];
+                            if pixel & 0b10_00_00 != 0 {
+                                r1.set_high();
+                            } else {
+                                r1.set_low();
+                            }
+
+                            if pixel & 0b00_10_00 != 0 {
+                                g1.set_high();
+                            } else {
+                                g1.set_low();
+                            }
+
+                            if pixel & 0b00_00_10 != 0 {
+                                b1.set_high();
+                            } else {
+                                b1.set_low();
+                            }
+                        }
                     } else {
-                        r1.set_low();
-                        r2.set_low();
+                        if pos < 57600 {
+                            let pixel = raw[pos];
+                            if pixel & 0b01_00_00 != 0 {
+                                r1.set_high();
+                            } else {
+                                r1.set_low();
+                            }
+
+                            if pixel & 0b00_01_00 != 0 {
+                                g1.set_high();
+                            } else {
+                                g1.set_low();
+                            }
+
+                            if pixel & 0b00_00_01 != 0 {
+                                b1.set_high();
+                            } else {
+                                b1.set_low();
+                            }
+                            let pixel = raw[pos + 1];
+                            if pixel & 0b01_00_00 != 0 {
+                                r1.set_high();
+                            } else {
+                                r1.set_low();
+                            }
+
+                            if pixel & 0b00_01_00 != 0 {
+                                g1.set_high();
+                            } else {
+                                g1.set_low();
+                            }
+
+                            if pixel & 0b00_00_01 != 0 {
+                                b1.set_high();
+                            } else {
+                                b1.set_low();
+                            }
+                        }
                     }
 
                     // 125Mhz for 10us
@@ -241,7 +326,7 @@ async fn main(spawner: Spawner) {
         }
         //      xrst.set_low(); // active display no update
 
-        // Timer::after(Duration::from_millis(500)).await;
+        Timer::after(Duration::from_millis(100)).await;
         info!("toggle frame");
     }
 
