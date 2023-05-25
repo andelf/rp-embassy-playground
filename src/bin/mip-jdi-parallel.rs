@@ -121,8 +121,8 @@ async fn main(spawner: Spawner) {
 
     let raw1 = include_bytes!("../../240x240.raw");
     // let raw2 = include_bytes!("../../240x240.2.raw");
-    //let raw2 = include_bytes!("../../color.raw");
-    let raw2 = include_bytes!("../../test.raw");
+    let raw2 = include_bytes!("../../color.raw");
+    //let raw2 = include_bytes!("../../test.raw");
 
     // pins
     let mut hst = Output::new(p.PIN_16, Level::Low);
@@ -322,7 +322,7 @@ async fn main(spawner: Spawner) {
 
                     //Timer::after(Duration::from_ticks(1)).await;
                     //Delay.delay_us(1_u32);
-                    cortex_m::asm::delay(200);
+                    cortex_m::asm::delay(150);
                 }
             } else {
                 // 82
@@ -331,7 +331,7 @@ async fn main(spawner: Spawner) {
         }
         xrst.set_low(); // active display no update
 
-        Timer::after(Duration::from_millis(1000)).await;
+        //Timer::after(Duration::from_millis(1000)).await;
         info!("toggle frame");
     }
 
