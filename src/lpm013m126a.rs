@@ -3,7 +3,10 @@
 //! 240x240 round display
 //! RGB222
 
-use embedded_hal::{blocking::delay::DelayUs, digital::v2::OutputPin};
+use embedded_hal::{
+    blocking::delay::DelayUs,
+    digital::v2::{OutputPin, ToggleableOutputPin},
+};
 
 use embedded_graphics::{
     pixelcolor::raw::RawU8,
@@ -91,6 +94,9 @@ impl DrawTarget for LPM013M126A {
             if let Ok((x @ 1..=240, y @ 1..=240)) = coord.try_into() {
                 let x = x - 1;
                 let y = y - 1;
+                if (x - 120) * (x - 120) + (y - 120) * (y - 120) > 120 * 120 {
+                    continue;
+                }
                 let pos = (y * 240 + x) as usize;
                 let raw_color = color.0.into_inner();
                 self.fb[pos] = raw_color;
@@ -106,7 +112,7 @@ impl LPM013M126A {
         rst.set_low()?;
         delay.delay_us(500);
         rst.set_high()?;
-        delay.delay_us(22_000);
+        delay.delay_us(23_000);
         Ok(())
     }
 
@@ -128,9 +134,9 @@ impl LPM013M126A {
     pub fn flush<E>(
         &self,
         vst: &mut dyn OutputPin<Error = E>,
-        vck: &mut dyn OutputPin<Error = E>,
+        vck: &mut dyn ToggleableOutputPin<Error = E>,
         hst: &mut dyn OutputPin<Error = E>,
-        hck: &mut dyn OutputPin<Error = E>,
+        hck: &mut dyn ToggleableOutputPin<Error = E>,
         enb: &mut dyn OutputPin<Error = E>,
         r1: &mut dyn OutputPin<Error = E>,
         r2: &mut dyn OutputPin<Error = E>,
@@ -140,17 +146,11 @@ impl LPM013M126A {
         b2: &mut dyn OutputPin<Error = E>,
         delay: &mut dyn DelayUs<u16>,
     ) -> Result<(), E> {
-        vck.set_low()?;
-
         vst.set_high()?;
         delay.delay_us(20_000);
 
         for i in 1..=488 {
-            if i & 1 == 1 {
-                vck.set_high()?;
-            } else {
-                vck.set_low()?;
-            }
+            vck.toggle()?;
 
             if i == 1 {
                 vst.set_low()?;
@@ -158,7 +158,8 @@ impl LPM013M126A {
             }
 
             if i >= 2 && i <= 481 {
-                hck.set_low()?;
+                hck.toggle()?;
+                delay.delay_us(1_000);
 
                 for j in 1..=123 {
                     if j == 1 {
@@ -252,20 +253,13 @@ impl LPM013M126A {
 
                     delay.delay_us(1);
 
-                    if j & 1 == 1 {
-                        hck.set_high()?;
-                    } else {
-                        hck.set_low()?;
-                    }
+                    hck.toggle()?;
                 }
             } else {
                 delay.delay_us(1_000);
             }
         }
-        hck.set_low()?;
-        vck.set_low()?;
 
-        delay.delay_us(1_000);
         Ok(())
     }
 }

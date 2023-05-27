@@ -18,7 +18,7 @@ use {defmt_rtt as _, panic_probe as _};
 
 use embedded_graphics::mono_font::ascii::FONT_10X20;
 use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::{Rectangle, Sector, PrimitiveStyleBuilder, Arc};
+use embedded_graphics::primitives::{Arc, PrimitiveStyleBuilder, Rectangle, Sector};
 use embedded_graphics::text::Alignment;
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
@@ -119,13 +119,12 @@ async fn main(spawner: Spawner) {
     // initial state
     let mut display = LPM013M126A::new();
 
-    LPM013M126A::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
-
     spawner
         .spawn(vcom_drive(p.PIN_14.degrade(), p.PIN_18.degrade(), p.PIN_17.degrade()))
         .unwrap();
 
     LPM013M126A::reset(&mut xrst, &mut delay);
+    LPM013M126A::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
 
     let style = MonoTextStyleBuilder::new()
         .font(&FONT_10X20)
@@ -136,21 +135,24 @@ async fn main(spawner: Spawner) {
         .unwrap();
 
     let style = PrimitiveStyleBuilder::new()
-        .stroke_color(Rgb222::RED)
-        .stroke_width(20)
-        .fill_color(Rgb222::GREEN)
+        .stroke_color(Rgb222::GREEN)
+        .stroke_width(40)
+        .fill_color(Rgb222::YELLOW)
         .build();
-    for i in 0..360 {
-        Arc::new(Point::new(1, 1), 240, 0.0.deg(), (i as f32).deg())
+    for i in 0..60 {
+        Arc::new(Point::new(1, 1), 240, 0.0.deg(), (40.0 + i as f32 * 6.0).deg())
             .into_styled(style)
             .draw(&mut display)
             .unwrap();
 
+        LPM013M126A::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
         display.flush(
             &mut vst, &mut vck, &mut hst, &mut hck, &mut enb, &mut r1, &mut r2, &mut g1, &mut g2, &mut b1, &mut b2,
             &mut delay,
         );
-        Timer::after(Duration::from_millis(50)).await;
+        //       Timer::after(Duration::MIN).await;
+        Timer::after(Duration::from_millis(0)).await;
+        //future::ready(()).await;
         info!("toggle frame {}", i);
         led.toggle();
     }
