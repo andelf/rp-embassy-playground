@@ -40,17 +40,12 @@ pub fn parse_keys(buf: &[u8]) -> char {
     let mut alt = false;
     let mut shift = false;
     for &raw in buf {
-        if raw == 0 {
+        if raw == 0 || raw == 0x01 { // invalid key
             break;
         }
         let row = (raw & 0x0f) as usize;
         let col = (raw >> 4) as usize;
         let key = SCAN_TABLE[row - 1][col - 1];
-        //        let key = if key == NUL {
-        //          SCAN_TABLE_ALT[row as usize][col as usize]
-        //    } else {
-        //      key
-        // };
         if key == ALT {
             alt = true;
         } else if key == LSHIFT || key == RSHIFT {

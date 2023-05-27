@@ -5,12 +5,12 @@ use embassy_rp::gpio::{AnyPin, Flex};
 use embedded_drivers::ds1302::InOutPin;
 use heapless::String;
 
+pub mod ch463;
 pub mod font;
 pub mod ssd1327;
 pub mod st7049a;
-pub mod ui;
 pub mod thermistor;
-pub mod ch463;
+pub mod ui;
 
 pub fn convert_to_celsius(raw_temp: u16) -> f32 {
     // According to chapter 4.9.5. Temperature Sensor in RP2040 datasheet

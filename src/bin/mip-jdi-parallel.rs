@@ -53,9 +53,6 @@ use embedded_hal::prelude::{_embedded_hal_blocking_delay_DelayMs, _embedded_hal_
 12 B2
  */
 
-// drive VCOM at 60Hz
-// FRP is the same signal as VCOM, and XFRP is the inverse signal of VCOM and FRP.
-
 /// pixel format: u8
 /// 0b00_rrggbb
 pub struct LPM012M134B {
@@ -94,6 +91,8 @@ impl DrawTarget for LPM012M134B {
     }
 }
 
+// drive VCOM at 60Hz
+// FRP is the same signal as VCOM, and XFRP is the inverse signal of VCOM and FRP.
 #[embassy_executor::task(pool_size = 1)]
 async fn vcom_drive(vcom: AnyPin, frp: AnyPin, xfrp: AnyPin) {
     let mut vcom = Output::new(vcom, Level::High);
@@ -123,8 +122,8 @@ async fn main(spawner: Spawner) {
     info!("started");
 
     let raw1 = include_bytes!("../../240x240.raw");
-    //let raw2 = include_bytes!("../../240x240.2.raw");
-    //let raw2 = include_bytes!("../../color.raw");
+    // let raw2 = include_bytes!("../../240x240.2.raw");
+    // let raw2 = include_bytes!("../../color.raw");
     let raw2 = include_bytes!("../../test.raw");
     //let raw2 = include_bytes!("../../hot.raw");
 
@@ -302,7 +301,7 @@ async fn main(spawner: Spawner) {
                     //Delay.delay_us(1_u32);
                     // future::ready(()).await;
                     //Timer::after(Duration::from_ticks()).await;
-                    cortex_m::asm::delay(100);
+                    cortex_m::asm::delay(75);
                     hck.toggle();
                     // cortex_m::asm::delay(150);
 

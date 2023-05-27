@@ -119,7 +119,7 @@ async fn main(spawner: Spawner) {
             state = n;
             info!("position {:?}", n);
 
-            // display.clear(Gray4::new(1));
+            display.clear(Gray4::new(0));
             let style = MonoTextStyleBuilder::new()
                 .font(&FONT_5X8)
                 .text_color(Gray4::new(8))
@@ -136,6 +136,8 @@ async fn main(spawner: Spawner) {
             }
             display.flush();
         }
+
+
 
         //btn.wait_for_any_edge().await;
         //btn.wait_for_any_edge().await;
