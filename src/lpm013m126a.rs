@@ -3,10 +3,7 @@
 //! 240x240 round display
 //! RGB222
 
-use embedded_hal::{
-    blocking::delay::DelayUs,
-    digital::v2::{InputPin, OutputPin, ToggleableOutputPin},
-};
+use embedded_hal::{blocking::delay::DelayUs, digital::v2::OutputPin};
 
 use embedded_graphics::{
     pixelcolor::raw::RawU8,
@@ -92,6 +89,8 @@ impl DrawTarget for LPM013M126A {
     {
         for Pixel(coord, color) in pixels.into_iter() {
             if let Ok((x @ 1..=240, y @ 1..=240)) = coord.try_into() {
+                let x = x - 1;
+                let y = y - 1;
                 let pos = (y * 240 + x) as usize;
                 let raw_color = color.0.into_inner();
                 self.fb[pos] = raw_color;
@@ -264,9 +263,9 @@ impl LPM013M126A {
             }
         }
         hck.set_low()?;
-        hst.set_low()?;
         vck.set_low()?;
 
+        delay.delay_us(1_000);
         Ok(())
     }
 }
