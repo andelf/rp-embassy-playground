@@ -61,6 +61,7 @@ epd = { path = "../epd" }
 
 embedded-drivers = { version = "0.0.2", features = ["defmt"] }
 embedded-hal-bus = "0.1.0-alpha.2"
+fixed = "1.23.1"
 
 [patch.crates-io]
 # foo = { git = 'https://github.com/example/foo.git' }

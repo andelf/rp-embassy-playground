@@ -1423,6 +1423,7 @@ dependencies = [
  "embedded-hal 0.2.7",
  "embedded-hal-bus",
  "epd",
+ "fixed",
  "heapless",
  "panic-probe",
  "ssd1306",

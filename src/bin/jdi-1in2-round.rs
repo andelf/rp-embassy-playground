@@ -12,6 +12,7 @@ use defmt::*;
 use display_interface::{DataFormat, WriteOnlyDataCommand};
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{AnyPin, Level, Output, Pin};
+use embassy_rp::pwm::{self, Pwm};
 use embassy_rp::spi::{self, Spi};
 use embassy_time::{Delay, Duration, Instant, Timer};
 use {defmt_rtt as _, panic_probe as _};
@@ -28,6 +29,7 @@ use embedded_graphics::{
     text::{Baseline, Text},
     Drawable,
 };
+use fixed::traits::ToFixed;
 use rp::lpm013m126a::{Rgb222, LPM013M126A};
 
 /*
@@ -36,9 +38,9 @@ use rp::lpm013m126a::{Rgb222, LPM013M126A};
 22 VST
 21 VCK
 
-14 VCOM - VCOM is driven by gpio
-18 FRP
-17 XFRP
+// PWM VCOM control
+14 to VCOM and FRP
+15 XFRP
 
 20 ENB
 16 HST
@@ -52,58 +54,26 @@ use rp::lpm013m126a::{Rgb222, LPM013M126A};
 12 B2
  */
 
-// drive VCOM at 60Hz
-// FRP is the same signal as VCOM, and XFRP is the inverse signal of VCOM and FRP.
-#[embassy_executor::task(pool_size = 1)]
-async fn vcom_drive(vcom: AnyPin, frp: AnyPin, xfrp: AnyPin) {
-    let mut vcom = Output::new(vcom, Level::High);
-    let mut frp = Output::new(frp, Level::High);
-    let mut xfrp = Output::new(xfrp, Level::Low);
-
-    // 60Hz = 16.666ms
-    info!("vcom drive started");
-    loop {
-        vcom.set_high();
-        frp.set_high();
-        xfrp.set_low();
-        Timer::after(Duration::from_millis(8)).await;
-        vcom.set_low();
-        frp.set_low();
-        xfrp.set_high();
-        Timer::after(Duration::from_millis(8)).await;
-    }
-}
-
 #[embassy_executor::main]
-async fn main(spawner: Spawner) {
-    let p = embassy_rp::init(Default::default());
+async fn main(_spawner: Spawner) {
+    let mut conf = embassy_rp::config::Config::default();
+    conf.clocks = embassy_rp::clocks::ClockConfig::rosc();
+    let p = embassy_rp::init(conf);
 
     let mut led = Output::new(p.PIN_25, Level::Low);
 
     info!("started");
 
-    let raw1 = include_bytes!("../../240x240.raw");
-    // let raw2 = include_bytes!("../../240x240.2.raw");
-    // let raw2 = include_bytes!("../../color.raw");
-    let raw2 = include_bytes!("../../test.raw");
-    //let raw2 = include_bytes!("../../hot.raw");
-
     // pins
     let mut hst = Output::new(p.PIN_16, Level::Low);
     let mut hck = Output::new(p.PIN_6, Level::Low);
 
+    let mut xrst = Output::new(p.PIN_19, Level::Low);
     // Write enable signal for the pixel memory
     let mut enb = Output::new(p.PIN_20, Level::Low);
 
     let mut vst = Output::new(p.PIN_22, Level::High);
-    let mut xrst = Output::new(p.PIN_19, Level::Low);
     let mut vck = Output::new(p.PIN_21, Level::High);
-
-    // Common electrode driving signal
-    //let mut vcom = Output::new(p.PIN_14, Level::High);
-    //let mut frp = Output::new(p.PIN_18, Level::Low);
-    //let mut xfrp = Output::new(p.PIN_17, Level::Low);
-    // vcom drive
 
     let mut r1 = Output::new(p.PIN_7, Level::Low);
     let mut r2 = Output::new(p.PIN_8, Level::Low);
@@ -119,9 +89,15 @@ async fn main(spawner: Spawner) {
     // initial state
     let mut display = LPM013M126A::new();
 
-    spawner
-        .spawn(vcom_drive(p.PIN_14.degrade(), p.PIN_18.degrade(), p.PIN_17.degrade()))
-        .unwrap();
+    // VCOM(FRP/XFRP) driver via PWM
+    // 7 Hz to 125 Mhz
+
+    let mut pwm_conf: pwm::Config = Default::default();
+    pwm_conf.compare_a = 32768;
+    pwm_conf.compare_b = 32768;
+    pwm_conf.invert_b = true;
+    pwm_conf.divider = 64_i32.to_fixed();
+    let pwm = Pwm::new_output_ab(p.PWM_CH7, p.PIN_14, p.PIN_15, pwm_conf.clone());
 
     LPM013M126A::reset(&mut xrst, &mut delay);
     LPM013M126A::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
@@ -134,18 +110,34 @@ async fn main(spawner: Spawner) {
         .draw(&mut display)
         .unwrap();
 
-    let style = PrimitiveStyleBuilder::new()
-        .stroke_color(Rgb222::GREEN)
-        .stroke_width(40)
-        .fill_color(Rgb222::YELLOW)
-        .build();
-    for i in 0..60 {
-        Arc::new(Point::new(1, 1), 240, 0.0.deg(), (40.0 + i as f32 * 6.0).deg())
-            .into_styled(style)
-            .draw(&mut display)
-            .unwrap();
+    let _color = [
+        Rgb222::WHITE,
+        Rgb222::BLACK,
+        Rgb222::RED,
+        Rgb222::GREEN,
+        Rgb222::BLUE,
+        Rgb222::CYAN,
+        Rgb222::MAGENTA,
+        Rgb222::YELLOW,
+    ];
+    for i in 1..=64 {
+        let c = Rgb222::from_raw(i);
+        let style = PrimitiveStyleBuilder::new()
+            .stroke_color(c)
+            .stroke_width(80)
+            .fill_color(c)
+            .build();
+        Arc::new(
+            Point::new(1, 1),
+            240,
+            (i as f32 * 6.0).deg(),
+            6.0.deg(), //            ((i + 1) as f32 * 6.0).deg(),
+        )
+        .into_styled(style)
+        .draw(&mut display)
+        .unwrap();
 
-        LPM013M126A::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
+        //
         display.flush(
             &mut vst, &mut vck, &mut hst, &mut hck, &mut enb, &mut r1, &mut r2, &mut g1, &mut g2, &mut b1, &mut b2,
             &mut delay,

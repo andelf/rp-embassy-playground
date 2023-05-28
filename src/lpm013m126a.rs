@@ -62,6 +62,10 @@ impl Rgb222 {
     pub fn new(red: u8, green: u8, blue: u8) -> Self {
         Self(RawU8::new((red << 4) | (green << 2) | blue))
     }
+
+    pub fn from_raw(raw: u8) -> Self {
+        Self(RawU8::new(raw))
+    }
 }
 
 /// The display
