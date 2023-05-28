@@ -17,7 +17,9 @@ use embassy_rp::spi::{self, Spi};
 use embassy_time::{Delay, Duration, Instant, Timer};
 use {defmt_rtt as _, panic_probe as _};
 
+use embedded_graphics::image::{Image, ImageRaw};
 use embedded_graphics::mono_font::ascii::FONT_10X20;
+use embedded_graphics::pixelcolor::raw::BigEndian;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Arc, PrimitiveStyleBuilder, Rectangle, Sector};
 use embedded_graphics::text::Alignment;
@@ -91,13 +93,13 @@ async fn main(_spawner: Spawner) {
 
     // VCOM(FRP/XFRP) driver via PWM
     // 7 Hz to 125 Mhz
-
+    // requires 60Hz vcom
     let mut pwm_conf: pwm::Config = Default::default();
     pwm_conf.compare_a = 32768;
     pwm_conf.compare_b = 32768;
     pwm_conf.invert_b = true;
-    pwm_conf.divider = 64_i32.to_fixed();
-    let pwm = Pwm::new_output_ab(p.PWM_CH7, p.PIN_14, p.PIN_15, pwm_conf.clone());
+    pwm_conf.divider = 9i32.to_fixed();
+    let _pwm = Pwm::new_output_ab(p.PWM_CH7, p.PIN_14, p.PIN_15, pwm_conf.clone());
 
     LPM013M126A::reset(&mut xrst, &mut delay);
     LPM013M126A::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
@@ -120,6 +122,10 @@ async fn main(_spawner: Spawner) {
         Rgb222::MAGENTA,
         Rgb222::YELLOW,
     ];
+
+    let raw_image: ImageRaw<Rgb222, BigEndian> = ImageRaw::new(include_bytes!("../../240x240.raw"), 240);
+    Image::new(&raw_image, Point::new(1, 1)).draw(&mut display).unwrap();
+
     for i in 1..=64 {
         let c = Rgb222::from_raw(i);
         let style = PrimitiveStyleBuilder::new()
@@ -150,11 +156,8 @@ async fn main(_spawner: Spawner) {
     }
 
     loop {
-        //xrst.set_low(); // active display no update
         Timer::after(Duration::from_millis(500)).await;
-        info!("toggle frame");
+        info!("sleep");
         led.toggle();
     }
-
-    loop {}
 }

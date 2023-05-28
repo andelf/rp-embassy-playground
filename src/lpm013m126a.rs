@@ -22,6 +22,12 @@ impl PixelColor for Rgb222 {
     type Raw = RawU8;
 }
 
+impl From<RawU8> for Rgb222 {
+    fn from(raw: RawU8) -> Self {
+        Self(raw)
+    }
+}
+
 impl RgbColor for Rgb222 {
     fn r(&self) -> u8 {
         (self.0.into_inner() >> 4) as u8 & 0b11
