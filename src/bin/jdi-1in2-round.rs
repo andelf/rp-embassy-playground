@@ -1,4 +1,4 @@
-//! Memory LCD - LPM013M126A drive
+//! Memory LCD - LPM012M134B drive
 
 #![no_std]
 #![no_main]
@@ -25,14 +25,13 @@ use embedded_graphics::primitives::{Arc, PrimitiveStyleBuilder, Rectangle, Secto
 use embedded_graphics::text::Alignment;
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
-    pixelcolor::BinaryColor,
     prelude::Point,
     primitives::{Line, PrimitiveStyle},
     text::{Baseline, Text},
     Drawable,
 };
 use fixed::traits::ToFixed;
-use rp::lpm013m126a::{Rgb222, LPM013M126A};
+use rp::lpm012m134b::{Rgb222, LPM012M134B};
 
 /*
 19 XRST
@@ -89,7 +88,7 @@ async fn main(_spawner: Spawner) {
     let mut delay = Delay;
 
     // initial state
-    let mut display = LPM013M126A::new();
+    let mut display = LPM012M134B::new();
 
     // VCOM(FRP/XFRP) driver via PWM
     // 7 Hz to 125 Mhz
@@ -101,8 +100,8 @@ async fn main(_spawner: Spawner) {
     pwm_conf.divider = 9i32.to_fixed();
     let _pwm = Pwm::new_output_ab(p.PWM_CH7, p.PIN_14, p.PIN_15, pwm_conf.clone());
 
-    LPM013M126A::reset(&mut xrst, &mut delay);
-    LPM013M126A::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
+    LPM012M134B::reset(&mut xrst, &mut delay);
+    LPM012M134B::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
 
     let style = MonoTextStyleBuilder::new()
         .font(&FONT_10X20)
@@ -126,11 +125,36 @@ async fn main(_spawner: Spawner) {
     let raw_image: ImageRaw<Rgb222, BigEndian> = ImageRaw::new(include_bytes!("../../240x240.raw"), 240);
     Image::new(&raw_image, Point::new(1, 1)).draw(&mut display).unwrap();
 
+    Line::new(Point::new(1, 1), Point::new(240, 1))
+        .into_styled(PrimitiveStyle::with_stroke(Rgb222::BLUE, 1))
+        .draw(&mut display)
+        .unwrap();
+
+    Line::new(Point::new(1, 238), Point::new(240, 238))
+        .into_styled(PrimitiveStyle::with_stroke(Rgb222::BLACK, 1))
+        .draw(&mut display)
+        .unwrap();
+
+    Line::new(Point::new(1, 1), Point::new(240, 240))
+        .into_styled(PrimitiveStyle::with_stroke(Rgb222::RED, 1))
+        .draw(&mut display)
+        .unwrap();
+    Line::new(Point::new(1, 240), Point::new(240, 1))
+        .into_styled(PrimitiveStyle::with_stroke(Rgb222::RED, 1))
+        .draw(&mut display)
+        .unwrap();
+
+    display.flush(
+        &mut vst, &mut vck, &mut hst, &mut hck, &mut enb, &mut r1, &mut r2, &mut g1, &mut g2, &mut b1, &mut b2,
+        &mut delay,
+    );
+
     for i in 1..=64 {
+        continue;
         let c = Rgb222::from_raw(i);
         let style = PrimitiveStyleBuilder::new()
             .stroke_color(c)
-            .stroke_width(80)
+            .stroke_width(10)
             .fill_color(c)
             .build();
         Arc::new(

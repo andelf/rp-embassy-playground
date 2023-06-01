@@ -1,7 +1,7 @@
-//! LPM013M126A
+//! LPM012M134B
 //!
-//! 240x240 round display
-//! RGB222
+//! JDI 240x240 round display
+//! RGB222 parallel
 
 use embedded_hal::{
     blocking::delay::DelayUs,
@@ -75,23 +75,23 @@ impl Rgb222 {
 }
 
 /// The display
-pub struct LPM013M126A {
+pub struct LPM012M134B {
     pub fb: [u8; 240 * 240],
 }
 
-impl LPM013M126A {
+impl LPM012M134B {
     pub fn new() -> Self {
         Self { fb: [0u8; 240 * 240] }
     }
 }
 
-impl Dimensions for LPM013M126A {
+impl Dimensions for LPM012M134B {
     fn bounding_box(&self) -> Rectangle {
         Rectangle::new(Point::new(1, 1), Size::new(240, 240))
     }
 }
 
-impl DrawTarget for LPM013M126A {
+impl DrawTarget for LPM012M134B {
     type Color = Rgb222;
 
     type Error = ();
@@ -116,7 +116,7 @@ impl DrawTarget for LPM013M126A {
     }
 }
 
-impl LPM013M126A {
+impl LPM012M134B {
     pub fn reset<E>(rst: &mut dyn OutputPin<Error = E>, delay: &mut dyn DelayUs<u16>) -> Result<(), E> {
         rst.set_high()?;
         rst.set_low()?;
@@ -158,23 +158,21 @@ impl LPM013M126A {
     ) -> Result<(), E> {
         vst.set_high()?;
         delay.delay_us(20_000);
+        vck.toggle()?;
 
-        for i in 1..=488 {
-            vck.toggle()?;
-
+        for i in 1..=487 {
             if i == 1 {
                 vst.set_low()?;
                 delay.delay_us(21_000);
             }
 
             if i >= 2 && i <= 481 {
+                hst.set_high()?;
                 hck.toggle()?;
                 delay.delay_us(1_000);
 
-                for j in 1..=123 {
+                for j in 1..=121 {
                     if j == 1 {
-                        hst.set_high()?;
-                    } else if j == 2 {
                         hst.set_low()?;
                     }
 
@@ -262,12 +260,13 @@ impl LPM013M126A {
                     }
 
                     delay.delay_us(1);
-
                     hck.toggle()?;
                 }
             } else {
                 delay.delay_us(1_000);
             }
+
+            vck.toggle()?;
         }
 
         Ok(())

@@ -12,7 +12,7 @@ use display_interface::{DataFormat, WriteOnlyDataCommand};
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{AnyPin, Level, Output, Pin};
 use embassy_rp::spi::{self, Spi};
-use embassy_time::{Duration, Timer, Delay};
+use embassy_time::{Delay, Duration, Timer};
 // use embedded_hal_1::i2c::I2c;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -175,7 +175,7 @@ async fn main(_spawner: Spawner) {
     send_command(&mut scl, &mut sdi, &mut csx, 0x11); // sleep out
 
     Timer::after(Duration::from_millis(20)).await; // > 10ms
-    send_command_with_mem(&mut scl, &mut sdi, &mut csx, 0x2c, &[0b00_111_111; 320*300/2]);
+    send_command_with_mem(&mut scl, &mut sdi, &mut csx, 0x2c, &[0b00_111_111; 320 * 300 / 2]);
 
     Timer::after(Duration::from_millis(140)).await; // > 10ms
 
@@ -186,7 +186,6 @@ async fn main(_spawner: Spawner) {
     send_command_data(&mut scl, &mut sdi, &mut csx, 0x0b, 0x00);
 
     // in Memory mode
-
 
     let mut rev = false;
     loop {
