@@ -2,7 +2,7 @@
 
 use core::fmt::Write;
 use embassy_rp::gpio::{AnyPin, Flex};
-use embedded_drivers::ds1302::InOutPin;
+// use embedded_drivers::ds1302::InOutPin;
 use heapless::String;
 
 pub mod ch463;
@@ -12,7 +12,8 @@ pub mod st7049a;
 pub mod thermistor;
 pub mod ui;
 
-pub mod lpm013m126a;
+pub mod lpm012m134b;
+pub mod lpm009m360a;
 
 pub fn convert_to_celsius(raw_temp: u16) -> f32 {
     // According to chapter 4.9.5. Temperature Sensor in RP2040 datasheet
@@ -40,6 +41,7 @@ impl<'a> InOut<'a> {
     }
 }
 
+/*
 impl<'a> InOutPin for InOut<'a> {
     type Input = Flex<'a, AnyPin>;
     type Output = Flex<'a, AnyPin>;
@@ -56,3 +58,4 @@ impl<'a> InOutPin for InOut<'a> {
         &mut self.0
     }
 }
+*/
