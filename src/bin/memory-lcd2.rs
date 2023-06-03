@@ -21,7 +21,7 @@ use micromath::F32Ext;
 use {defmt_rtt as _, panic_probe as _};
 
 use display_interface_spi::SPIInterface;
-use embedded_graphics::mono_font::ascii::FONT_10X20;
+use embedded_graphics::mono_font::ascii::{FONT_10X20, FONT_7X14};
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Circle;
 use embedded_graphics::text::Alignment;
@@ -64,16 +64,15 @@ async fn main(_spawner: Spawner) {
     info!("touch resolution: {}x{} scale: {}", x, y, scale);
 
     it7259.set_idle_gesture(Some(it7259::IdleGesture::DoubleTap)).unwrap();
-    // it7259.enter_idle();
+    it7259.enter_idle();
 
     let mosi = p.PIN_19; // SI
     let clk = p.PIN_18; // SCLK
     let mut config = spi::Config::default();
     config.frequency = 8_000_000;
-    let spi = Spi::new_blocking_txonly(p.SPI0, clk, mosi, config);
-    let cs = Output::new(p.PIN_17, Level::Low);
-
+    let mut spi = Spi::new_blocking_txonly(p.SPI0, clk, mosi, config);
     let mut disp = Output::new(p.PIN_20, Level::Low); // DISP
+    let mut cs = Output::new(p.PIN_17, Level::Low);
 
     disp.set_high();
 
@@ -83,10 +82,8 @@ async fn main(_spawner: Spawner) {
 
     info!("all initialized");
 
-    const POINTS: usize = 8;
-
-    // a 3D diamond shape
-    let orig_points: [[f32; 3]; POINTS] = [
+    // A 3D cube has 8 points, each point has 3 values (x, y, z)
+    let orig_points: [[f32; 3]; 8] = [
         [1.0, 1.0, 1.0],
         [1.0, -1.0, 1.0],
         [-1.0, -1.0, 1.0],
@@ -99,56 +96,56 @@ async fn main(_spawner: Spawner) {
 
     //  Perspective Projection:
     // distance to project plane
-    let d = 1.0;
+    let mut d = 1.0;
 
     let z_offset = -3.0; // offset on z axis, leave object
 
     let cube_size = 80.0;
     let screen_offset_x = 176.0 / 2.0;
     let screen_offset_y = 176.0 / 2.0;
-    /*
-    x' = (d * x) / z
-    y' = (d * y) / z
-     */
     let mut rotate_angle = 0.0_f32;
 
-    let mut rotated_points = [[0.0; 3]; POINTS];
-    let mut projected_points = [[0.0; 2]; POINTS];
-    let mut points = [[0_i32; 2]; POINTS];
+    let mut rotated_points = [[0.0; 3]; 8];
+    let mut projected_points = [[0.0; 2]; 8];
+    let mut points = [[0_i32; 2]; 8];
 
-    let mut v0 = 0.0;
-    let mut accel = 0.0;
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_7X14)
+        .text_color(Rgb111::WHITE)
+        .background_color(Rgb111::BLACK)
+        .build();
 
     loop {
-        while let Ok(Some(ev)) = it7259.poll_event() {
-            match ev {
-                it7259::Event::Gesture(it7259::Gesture::Flick {
-                    start_y,
-                    end_y,
-                    direction,
-                    ..
-                }) => {
-                    info!("flick tap");
-                    let diff = (start_y as f32 - end_y as f32).abs();
-                    accel = -(diff / 1000.0);
-                    v0 = (diff as f32 / 40.0);
-
-                    if direction > 12 {
-                        accel = -accel;
-                        v0 = -v0;
-                    }
-
-                    info!("accel: {} v0: {} {}", accel, v0, direction);
-                }
-                _ => {}
-            }
-        }
-
-        for (i, [x, y, z]) in orig_points.iter().copied().enumerate() {
-            // rotate along y axis
+        for (i, [x, y, z]) in orig_points.into_iter().enumerate() {
             rotated_points[i][0] = x * rotate_angle.cos() - z * rotate_angle.sin();
             rotated_points[i][1] = y;
             rotated_points[i][2] = x * rotate_angle.sin() + z * rotate_angle.cos();
+
+            /*
+            rotated_points[i][0] = rotated_points[i][0];
+            rotated_points[i][1] =
+                rotated_points[i][1] * rotate_angle.cos() - rotated_points[i][2] * rotate_angle.sin();
+            rotated_points[i][2] =
+                rotated_points[i][1] * rotate_angle.sin() + rotated_points[i][2] * rotate_angle.cos();
+                */
+
+            /*
+            x' = cos(𝜙) * x + sin(𝜙) * sin(𝜃) * y - sin(𝜙) * cos(𝜃) * z
+            y' = cos(𝜃) * y + sin(𝜃) * z
+            z' = -sin(𝜙) * x + cos(𝜙) * sin(𝜃) * y + cos(𝜙) * cos(𝜃) * z
+
+            rotated_points[i][0] = rotate_angle.cos() * x + rotate_angle.sin() * rotate_angle2.sin() * y
+                - rotate_angle.sin() * rotate_angle2.cos() * z;
+            rotated_points[i][1] = rotate_angle2.cos() * y + rotate_angle2.sin() * z;
+            rotated_points[i][2] = -rotate_angle.sin() * x
+                + rotate_angle.cos() * rotate_angle2.sin() * y
+                + rotate_angle.cos() * rotate_angle2.cos() * z;
+                            */
+
+            /*
+            x' = (d * x) / z
+            y' = (d * y) / z
+             */
 
             let rx = rotated_points[i][0];
             let ry = rotated_points[i][1];
@@ -168,7 +165,8 @@ async fn main(_spawner: Spawner) {
         }
         display.clear(Rgb111::BLACK);
         for ([idx, idy], color) in [
-            ([0, 1], Rgb111::YELLOW),
+            // use different colors for each connected line
+            ([0, 1], Rgb111::RED),
             ([1, 2], Rgb111::GREEN),
             ([2, 3], Rgb111::BLUE),
             ([3, 0], Rgb111::MAGENTA),
@@ -177,7 +175,7 @@ async fn main(_spawner: Spawner) {
             ([6, 7], Rgb111::MAGENTA),
             ([7, 4], Rgb111::BLUE),
             ([0, 4], Rgb111::GREEN),
-            ([1, 5], Rgb111::BLUE),
+            ([1, 5], Rgb111::RED),
             ([2, 6], Rgb111::CYAN),
             ([3, 7], Rgb111::BLUE),
         ]
@@ -192,25 +190,17 @@ async fn main(_spawner: Spawner) {
             .unwrap();
         }
 
+        Text::new("@andelf", Point::new(2, 10), text_style)
+            .draw(&mut *display)
+            .unwrap();
+
         display.update(&mut delay);
         // Timer::after(Duration::from_millis(10)).await;
-
-        let v1 = v0 + accel;
-        if v0 * v1 < 0.0 {
-            v0 = 0.0;
-            accel = 0.0;
-        } else {
-            v0 = v1;
-        }
-        rotate_angle += v0;
+        rotate_angle += 0.08;
 
         // 3.1415 / 2.0
         if rotate_angle > 2.0 * 3.1415 {
             rotate_angle = 0.0;
-        } else if rotate_angle < 0.0 {
-            rotate_angle = 2.0 * 3.1415;
         }
-        Timer::after(Duration::from_millis(1)).await;
-        led.toggle();
     }
 }
