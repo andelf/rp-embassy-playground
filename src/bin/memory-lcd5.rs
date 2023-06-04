@@ -10,9 +10,9 @@ use defmt::*;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::pwm::Pwm;
-use embassy_rp::{i2c, pwm};
 use embassy_rp::spi::{self, Spi};
-use embassy_time::Delay;
+use embassy_rp::{i2c, pwm};
+use embassy_time::{Delay, Duration, Timer};
 use fixed::traits::ToFixed;
 use micromath::F32Ext;
 use {defmt_rtt as _, panic_probe as _};
@@ -45,10 +45,10 @@ async fn main(_spawner: Spawner) {
 
     let mut disp = Output::new(p.PIN_20, Level::Low); // DISP
 
-    // extcomin driver
+    // EXTCOMIN driver: or use GND
     let mut pwm_conf: pwm::Config = Default::default();
-    pwm_conf.compare_b = 32768;
-    pwm_conf.divider = 9i32.to_fixed();
+    pwm_conf.compare_b = 0xffff / 2;
+    pwm_conf.divider = 10i32.to_fixed();
     let _pwm = Pwm::new_output_b(p.PWM_CH2, p.PIN_21, pwm_conf.clone());
 
     disp.set_high();
@@ -113,7 +113,7 @@ async fn main(_spawner: Spawner) {
         display.clear(BinaryColor::On);
 
         for (i, [x, y]) in projected_points.iter().enumerate() {
-            let x: f32 = (x * cube_size) + screen_offset_x;
+            let x: f32 = (x * cube_size * 2.0) + screen_offset_x;
             let y: f32 = (y * cube_size) + screen_offset_y;
 
             // manually round
@@ -147,7 +147,7 @@ async fn main(_spawner: Spawner) {
         }
 
         display.update(&mut delay);
-        // Timer::after(Duration::from_millis(10)).await;
+        Timer::after(Duration::from_millis(10)).await;
         rotate_angle += 0.02;
 
         if rotate_angle > 3.1415 / 2.0 {
