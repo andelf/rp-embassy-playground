@@ -163,7 +163,7 @@ async fn main(_spawner: Spawner) {
 
     let mut h = 0;
 
-    const LEDS: usize = 13;
+    const LEDS: usize = 14;
     let mut buf = [0u8; 4 + 3 * LEDS + 4 + 3];
 
     buf[0..4].copy_from_slice(&u32::to_be_bytes(24 * LEDS as u32));
@@ -202,7 +202,7 @@ async fn main(_spawner: Spawner) {
             }
         }
 
-        Timer::after(Duration::from_millis(100)).await;
+        Timer::after(Duration::from_millis(50)).await;
         info!("ok");
     }
 }
