@@ -22,11 +22,6 @@ use embedded_graphics::text::Text;
 use embedded_graphics_core::pixelcolor::Rgb565;
 use embedded_graphics_core::prelude::{DrawTarget, Point, RgbColor, WebColors};
 use embedded_graphics_core::Drawable;
-use fixed::traits::ToFixed;
-// use fixed::types::U56F8;
-
-use fixed_macro::types::U56F8;
-use micromath::F32Ext;
 
 use {defmt_rtt as _, panic_probe as _};
 
@@ -93,11 +88,14 @@ impl<'l> Spi9Bit<'l> {
         Self { sm: sm0 }
     }
 
+    #[inline]
     pub fn write_data(&mut self, val: u8) {
+        // no need to busy wait
         while self.sm.tx().full() {}
         self.sm.tx().push(0x80000000 | ((val as u32) << 23));
     }
 
+    #[inline]
     pub fn write_command(&mut self, val: u8) {
         while self.sm.tx().full() {}
         self.sm.tx().push((val as u32) << 23);
@@ -187,10 +185,11 @@ async fn main(_spawner: Spawner) {
         led.toggle();
         buf.clear();
 
-        /* if frames % 2 == 1 {
+        /*
+        if frames % 2 == 1 {
             display.clear(Rgb565::YELLOW).unwrap()
         } else {
-            display.clear(Rgb565::CYAN).unwrap()
+            display.clear(Rgb565::YELLOW).unwrap()
         }
         */
 
@@ -200,7 +199,6 @@ async fn main(_spawner: Spawner) {
         Text::new(&buf, Point::new(20, 100), char_style)
             .draw(&mut display)
             .unwrap();
-        led.toggle();
         frames += 1;
 
         //di.write_data(0xaa);
