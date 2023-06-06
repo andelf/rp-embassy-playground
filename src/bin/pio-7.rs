@@ -1,5 +1,5 @@
-//! WS2812 PIO dirver
-//! -strip with 14 leds
+//! SPI 9-bit in PIO
+//!
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
@@ -196,7 +196,7 @@ async fn main(_spawner: Spawner) {
 
         let fps = frames as f32 / start.elapsed().as_millis() as f32 * 1000.0;
 
-        core::write!(&mut buf, "total fps: {:.1}", fps).unwrap();
+        core::write!(&mut buf, "count: {}\ntotal fps: {:.1}", frames, fps).unwrap();
         Text::new(&buf, Point::new(20, 100), char_style)
             .draw(&mut display)
             .unwrap();
