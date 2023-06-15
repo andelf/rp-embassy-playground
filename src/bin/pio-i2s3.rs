@@ -90,11 +90,11 @@ fn main() -> ! {
         // LRCLK, BCLK
         .side_set 2
 
-         set pindirs,1              side 0b00
+         //set pindirs,1              side 0b00
 
         .wrap_target
 
-//        public entry_point:
+//      public entry_point:
             set y, 30              side 0b11 [1]
         bitloop1:
             nop                     side 0b00 [1]
