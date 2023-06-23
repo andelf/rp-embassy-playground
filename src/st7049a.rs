@@ -8,7 +8,7 @@ use embedded_graphics::{
     primitives::Rectangle,
     Pixel,
 };
-use embedded_hal::{blocking::spi, digital::v2::OutputPin};
+
 
 const WIDTH: u32 = 64;
 const HEIGHT: u32 = 16;
@@ -156,12 +156,10 @@ impl<DI> Display<DI> {
             } else {
                 self.buf[idx as usize] = ((color as u8) << 4) | (self.buf[idx as usize] & 0x0f);
             }
+        } else if y < 4 {
+            self.buf[idx as usize] = ((color as u8) << 4) | (self.buf[idx as usize] & 0x0f);
         } else {
-            if y < 4 {
-                self.buf[idx as usize] = ((color as u8) << 4) | (self.buf[idx as usize] & 0x0f);
-            } else {
-                self.buf[idx as usize] = (color as u8) | (self.buf[idx as usize] & 0xf0);
-            }
+            self.buf[idx as usize] = (color as u8) | (self.buf[idx as usize] & 0xf0);
         }
     }
 }

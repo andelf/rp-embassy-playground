@@ -45,7 +45,7 @@ impl Framebuffer565 {
 
 impl OriginDimensions for Framebuffer565 {
     fn size(&self) -> Size {
-        Size::new(66 * 3, 96)
+        Size::new(196, 96)
     }
 }
 
@@ -58,7 +58,7 @@ impl DrawTarget for Framebuffer565 {
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         for Pixel(coord, color) in pixels.into_iter() {
-            let x = coord.x as usize + 2;
+            let x = coord.x as usize + 2; // offset by left boarder
             let y = coord.y as usize;
 
             if y >= 96 {
@@ -76,15 +76,16 @@ impl DrawTarget for Framebuffer565 {
                 // write to r channel
                 // write to g channel
                 // let color = (color << 1) | (color & 0b1);
-                self.data[index] = (self.data[index] & 0b11111_111111_00000) | color;
+                let color = (color << 1) | (color & 0b1);
+                self.data[index] = (self.data[index] & 0b00000_111111_11111) | (color << 11);
             } else if x % 3 == 1 {
+                let color = (color << 2) | (color & 0b1) | ((color & 0b1) << 1);
                 self.data[index] = (self.data[index] & 0b11111_000000_11111) | (color << 5);
                 // write to b channel
                 // first
-                //let color = (color << 1) | (color & 0b1);
             } else {
-                self.data[index] = (self.data[index] & 0b00000_111111_11111) | (color << 11);
-                // let color = (color << 2) | (color & 0b1) | ((color & 0b1) << 1);
+                let color = (color << 1) | (color & 0b1);
+                self.data[index] = (self.data[index] & 0b11111_111111_00000) | color;
             }
         }
         Ok(())
@@ -216,7 +217,11 @@ async fn main(_spawner: Spawner) {
         fb.clear(Gray4::BLACK);
 
         Line::new(Point::new(0, 0), Point::new(195, 95))
-            .into_styled(PrimitiveStyle::with_stroke(Gray4::WHITE, 1))
+            .into_styled(PrimitiveStyle::with_stroke(Gray4::new(2), 1))
+            .draw(&mut fb)
+            .unwrap();
+        Line::new(Point::new(195, 0), Point::new(0, 95))
+            .into_styled(PrimitiveStyle::with_stroke(Gray4::new(2), 1))
             .draw(&mut fb)
             .unwrap();
 
@@ -232,7 +237,7 @@ async fn main(_spawner: Spawner) {
         // line start with 32
         // col start with 92
         //
-        Line::new(Point::new(0, 1), Point::new(196, 1))
+        Line::new(Point::new(0, 3), Point::new(196, 3))
             .into_styled(PrimitiveStyle::with_stroke(Gray4::WHITE, 1))
             .draw(&mut fb)
             .unwrap();
@@ -270,7 +275,7 @@ async fn main(_spawner: Spawner) {
 
         for &b in &fb.data {
             di.send_data(DataFormat::U8(&[(b >> 8) as u8, b as u8]));
-         }
+        }
         p += 1;
 
         led.toggle();

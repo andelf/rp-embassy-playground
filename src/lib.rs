@@ -6,22 +6,24 @@ use embassy_rp::gpio::{AnyPin, Flex};
 use heapless::String;
 
 pub mod ch463;
+pub mod color;
 pub mod font;
 pub mod ssd1327;
 pub mod st7049a;
 pub mod thermistor;
 pub mod ui;
 
-pub mod lpm012m134b;
 pub mod lpm009m360a;
+pub mod lpm012m134b;
+pub mod lpm013m126a;
 
 pub fn convert_to_celsius(raw_temp: u16) -> f32 {
     // According to chapter 4.9.5. Temperature Sensor in RP2040 datasheet
-    27.0 - (raw_temp as f32 * 3.3 / 4096.0 - 0.706) / 0.001721 as f32
+    27.0 - (raw_temp as f32 * 3.3 / 4096.0 - 0.706) / 0.001721_f32
 }
 pub fn convert_to_voltage(raw_value: u16) -> f32 {
     // According to chapter 4.9.5. Temperature Sensor in RP2040 datasheet
-    (raw_value as f32 * 3.3 / 4096.0) as f32
+    (raw_value as f32 * 3.3 / 4096.0)
 }
 
 /// seconds to hh:mm:ss

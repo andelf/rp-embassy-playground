@@ -154,11 +154,7 @@ async fn main(_spawner: Spawner) {
 
     let rst = p.PIN_20;
 
-    let ws2812 = p.PIN_23;
-
-    //    let mut pio0 = Pio::new(p.PIO0);
-
-    let mut di = Spi9Bit::new(p.PIO0, clk, mosi, cs);
+    let di = Spi9Bit::new(p.PIO0, clk, mosi, cs);
 
     let rst = Output::new(rst, Level::High);
 

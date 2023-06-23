@@ -23,7 +23,6 @@ async fn main(_spawner: Spawner) {
     let mut buf = [0u8; 32];
 
     loop {
-
         uart.blocking_read(&mut buf);
 
         if let Some(measurements) = Measurements::from_bytes(&buf) {

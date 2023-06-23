@@ -137,8 +137,6 @@ async fn main(spawner: Spawner) {
             display.flush();
         }
 
-
-
         //btn.wait_for_any_edge().await;
         //btn.wait_for_any_edge().await;
         Timer::after(Duration::from_millis(1)).await;

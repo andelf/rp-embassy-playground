@@ -126,7 +126,7 @@ async fn main(_spawner: Spawner) {
             points[i][1] = (y + 0.5) as i32;
         }
 
-        display.clear(Rgb111::WHITE);
+        display.clear(Rgb111::BLACK);
         for ([idx, idy], color) in [
             // use different colors for each connected line
             ([0, 1], Rgb111::RED),

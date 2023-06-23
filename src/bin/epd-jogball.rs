@@ -57,7 +57,6 @@ async fn main(spawner: Spawner) {
 
     // EPD init
 
-
     let mut last_pos = [0; 2];
 
     loop {

@@ -64,7 +64,7 @@ fn main() -> ! {
     disp.set_high();
 
     let mut display: MemoryLCD<LPM013M126A<BinaryColor>, _, _> = MemoryLCD::new(spi, cs);
-    display.set_rotation(memory_lcd_spi::framebuffer::Rotation::Deg90);
+    //display.set_rotation(memory_lcd_spi::framebuffer::Rotation::Deg90);
     display.clear(BinaryColor::Off);
     display.update(&mut delay);
 

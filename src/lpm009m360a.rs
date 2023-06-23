@@ -35,15 +35,15 @@ impl Rgb111 {
 
 impl RgbColor for Rgb111 {
     fn r(&self) -> u8 {
-        (self.0.into_inner() >> 4) as u8 & 0b11
+        (self.0.into_inner() >> 4) & 0b11
     }
 
     fn g(&self) -> u8 {
-        (self.0.into_inner() >> 2) as u8 & 0b11
+        (self.0.into_inner() >> 2) & 0b11
     }
 
     fn b(&self) -> u8 {
-        self.0.into_inner() as u8 & 0b11
+        self.0.into_inner() & 0b11
     }
 
     const MAX_R: u8 = 0b1;
@@ -131,7 +131,7 @@ impl DrawTarget for LPM009M360A {
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         for Pixel(Point { x, y }, color) in pixels.into_iter() {
-            if x < 0 || x >= 72 || y < 0 || y >= 144 {
+            if !(0..72).contains(&x) || !(0..144).contains(&y) {
                 continue;
             }
 

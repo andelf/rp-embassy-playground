@@ -40,7 +40,8 @@ pub fn parse_keys(buf: &[u8]) -> char {
     let mut alt = false;
     let mut shift = false;
     for &raw in buf {
-        if raw == 0 || raw == 0x01 { // invalid key
+        if raw == 0 || raw == 0x01 {
+            // invalid key
             break;
         }
         let row = (raw & 0x0f) as usize;

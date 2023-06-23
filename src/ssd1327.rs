@@ -4,7 +4,7 @@
 use cortex_m::prelude::_embedded_hal_blocking_delay_DelayUs;
 use display_interface::{DataFormat, DisplayError, WriteOnlyDataCommand};
 use embedded_graphics::{
-    pixelcolor::{raw::RawU4, Gray4},
+    pixelcolor::{Gray4},
     prelude::{Dimensions, DrawTarget, GrayColor, Point, Size},
     primitives::Rectangle,
     Pixel,

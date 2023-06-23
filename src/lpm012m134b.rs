@@ -30,15 +30,15 @@ impl From<RawU8> for Rgb222 {
 
 impl RgbColor for Rgb222 {
     fn r(&self) -> u8 {
-        (self.0.into_inner() >> 4) as u8 & 0b11
+        (self.0.into_inner() >> 4) & 0b11
     }
 
     fn g(&self) -> u8 {
-        (self.0.into_inner() >> 2) as u8 & 0b11
+        (self.0.into_inner() >> 2) & 0b11
     }
 
     fn b(&self) -> u8 {
-        self.0.into_inner() as u8 & 0b11
+        self.0.into_inner() & 0b11
     }
 
     const MAX_R: u8 = 0b11;
@@ -166,7 +166,7 @@ impl LPM012M134B {
                 delay.delay_us(21_000);
             }
 
-            if i >= 2 && i <= 481 {
+            if (2..=481).contains(&i) {
                 hst.set_high()?;
                 hck.toggle()?;
                 delay.delay_us(1_000);
@@ -182,7 +182,7 @@ impl LPM012M134B {
                         enb.set_low()?;
                     }
 
-                    if j >= 1 && j <= 120 {
+                    if (1..=120).contains(&j) {
                         let y = (i - 2) / 2;
                         let x = j - 1;
 

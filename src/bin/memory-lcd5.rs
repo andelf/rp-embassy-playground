@@ -141,7 +141,7 @@ async fn main(_spawner: Spawner) {
                 Point::new(points[*idx][0], points[*idx][1]),
                 Point::new(points[*idy][0], points[*idy][1]),
             )
-            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::Off, 1))
+            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::Off, 2))
             .draw(&mut *display)
             .unwrap();
         }

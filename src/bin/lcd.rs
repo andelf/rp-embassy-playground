@@ -38,16 +38,16 @@ async fn main(_spawner: Spawner) {
 
     let mut led = Output::new(p.PIN_25, Level::Low);
 
-    let miso = p.PIN_16; // not used
     let mosi = p.PIN_19;
     let clk = p.PIN_18;
     let csn = p.PIN_17;
     let dc = p.PIN_20;
+    let rst = p.PIN_16;
 
     // create SPI
     let mut config = spi::Config::default();
     config.frequency = 2_000_000;
-    let spi = Spi::new_blocking(p.SPI0, clk, mosi, miso, config);
+    let spi = Spi::new_blocking_txonly(p.SPI0, clk, mosi, config);
 
     // Configure CS
     let cs = Output::new(csn, Level::Low);

@@ -4,7 +4,7 @@ use embedded_graphics::{
     prelude::Size,
 };
 
-const CHARS: &'static str = " 。一三上不世中为乃了五亦以佛你依倒僧净减凡切利卧即厄受可味咒在垢埵增声复多大天好如娑婆子安实尽己平度异得心怕怖恐想意慰所挂提揭故无时明是晴智曰最有梦槃槽死法波涅深灭照瓣生界皆相真眼知碌碍神离究空竟等罗老耨耳能自至舌舍般色若苦菩萨蕴藐虚蜜行见观触诃识说诸谛贵身还远道阿除集雾霾颠香鼻！，：";
+const CHARS: &str = " 。一三上不世中为乃了五亦以佛你依倒僧净减凡切利卧即厄受可味咒在垢埵增声复多大天好如娑婆子安实尽己平度异得心怕怖恐想意慰所挂提揭故无时明是晴智曰最有梦槃槽死法波涅深灭照瓣生界皆相真眼知碌碍神离究空竟等罗老耨耳能自至舌舍般色若苦菩萨蕴藐虚蜜行见观触诃识说诸谛贵身还远道阿除集雾霾颠香鼻！，：";
 
 fn cn_pixel_mapping(c: char) -> usize {
     CHARS
@@ -43,7 +43,6 @@ pub const FONT_SEG7_30X48: MonoFont = MonoFont {
     underline: mono_font::DecorationDimensions::new(12 + 2, 1),
     strikethrough: mono_font::DecorationDimensions::new(12 / 2, 1),
 };
-
 
 pub const FONT_SEG7_16X24: MonoFont = MonoFont {
     image: ImageRaw::new(include_bytes!("../Dseg7-16x24.raw"), 336),
