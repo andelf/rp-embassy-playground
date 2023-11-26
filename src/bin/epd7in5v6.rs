@@ -364,7 +364,7 @@ async fn main(_spawner: Spawner) {
 
     // create SPI
     let mut config = spi::Config::default();
-    config.frequency = 20_000_000;
+    config.frequency = 28_000_000;
     let spi = Spi::new_blocking_txonly(p.SPI0, clk, mosi, config);
 
     // Configure CS
@@ -433,8 +433,8 @@ async fn main(_spawner: Spawner) {
     fb.clear(BinaryColor::On);
 
     Text::with_alignment(
-        "2023-11-27 00:08:00",
-        Point::new(100, 380),                                   //skip 1 line
+        "2023-11-27",
+        Point::new(50, 380),                                    //skip 1 line
         MonoTextStyle::new(&FONT_SEG7_30X48, BinaryColor::Off), // black
         Alignment::Left,
     )
@@ -465,11 +465,34 @@ async fn main(_spawner: Spawner) {
     .draw(&mut fb)
     .unwrap();
     epd.display_frame(fb.data());
-
     epd.refresh();
 
     Timer::after(Duration::from_millis(2000)).await;
 
+    epd.set_partial_refresh(Rectangle::new(Point::new(400, 360), Size::new(360, 80)));
+    let mut fbx = Framebuffer::<
+        BinaryColor,
+        _,
+        LittleEndian,
+        360,
+        80,
+        { embedded_graphics::framebuffer::buffer_size::<BinaryColor>(360, 80) },
+    >::new();
+
+    for i in 80..90 {
+        fbx.clear(BinaryColor::On);
+        Text::with_alignment(
+            &display_seconds(i),
+            Point::new(0, 11),                                      //skip 1 line
+            MonoTextStyle::new(&FONT_SEG7_30X48, BinaryColor::Off), // black
+            Alignment::Left,
+        )
+        .draw(&mut fbx)
+        .unwrap();
+        epd.display_frame(fbx.data());
+        epd.refresh();
+        Timer::after(Duration::from_millis(1000)).await;
+    }
 
     epd.set_partial_refresh(Rectangle::new(Point::new(400, 240), Size::new(200, 80)));
     let mut fbx = Framebuffer::<
@@ -480,7 +503,6 @@ async fn main(_spawner: Spawner) {
         80,
         { embedded_graphics::framebuffer::buffer_size::<BinaryColor>(200, 80) },
     >::new();
-
     fbx.clear(BinaryColor::On);
 
     Text::with_alignment(
@@ -550,21 +572,20 @@ async fn main(_spawner: Spawner) {
         "波罗僧揭谛",
         "菩提萨婆诃",
     ];
-    loop {
-        for i in article {
-            fbx.clear(BinaryColor::On);
-            Text::with_alignment(
-                i,
-                Point::new(10, 20),
-                MonoTextStyle::new(&FONT_WQY16, BinaryColor::Off), // black
-                Alignment::Left,
-            )
-            .draw(&mut fbx)
-            .unwrap();
-            epd.display_frame(fbx.data());
-            epd.refresh();
-            // Timer::after(Duration::from_millis(50 * (i.len() as u64))).await;
-        }
+
+    for i in article {
+        fbx.clear(BinaryColor::On);
+        Text::with_alignment(
+            i,
+            Point::new(10, 20),
+            MonoTextStyle::new(&FONT_WQY16, BinaryColor::Off), // black
+            Alignment::Left,
+        )
+        .draw(&mut fbx)
+        .unwrap();
+        epd.display_frame(fbx.data());
+        epd.refresh();
+        // Timer::after(Duration::from_millis(50 * (i.len() as u64))).await;
     }
 
     loop {
@@ -592,4 +613,17 @@ async fn main(_spawner: Spawner) {
         led.toggle();
         info!("led toggle");
     }
+}
+
+fn display_seconds(nsecs: i32) -> heapless::String<16> {
+    // seconds to hh:mm:ss
+    let mut buf = heapless::String::<16>::new();
+    let mut n = nsecs;
+    let h = n / 3600;
+    n = n % 3600;
+    let m = n / 60;
+    n = n % 60;
+    let s = n;
+    core::write!(&mut buf, "{:02}:{:02}:{:02}", h, m, s).unwrap();
+    buf
 }
