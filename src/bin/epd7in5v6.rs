@@ -345,6 +345,11 @@ impl EPD7in5v2<'_> {
         const PARTIAL_OUT: u8 = 0x92;
         self.send_command(PARTIAL_OUT);
     }
+
+    fn power_off(&mut self) {
+        self.send_command(0x02);
+        self.busy_wait();
+    }
 }
 
 #[embassy_executor::main]
@@ -390,36 +395,6 @@ async fn main(_spawner: Spawner) {
     epd.configure_partial_update();
 
     info!("clear ok");
-
-    // init OK
-
-    /*
-    Rectangle::new(Point::new(0, 10), Size::new(200, 400))
-        .into_styled(embedded_graphics::primitives::PrimitiveStyle::with_fill(BinaryColor::Off))
-        .draw(&mut fb)
-        .unwrap();
-
-    epd.display_frame_black(fb.as_bytes());
-
-    fb.fill(BinaryColor::On); // red clean
-
-    Rectangle::new(Point::new(300, 10), Size::new(200, 400))
-        .into_styled(embedded_graphics::primitives::PrimitiveStyle::with_fill(BinaryColor::On))
-        .draw(&mut fb)
-        .unwrap();
-
-    epd.display_frame_red(fb.as_bytes());
-
-    epd.refresh();
-
-    info!("write ok");
-
-    info!("led");
-    loop {
-        Timer::after(Duration::from_millis(1000)).await;
-        led.toggle();
-    }
-    */
 
     let mut fb = Framebuffer::<
         BinaryColor,
@@ -587,6 +562,8 @@ async fn main(_spawner: Spawner) {
         epd.refresh();
         // Timer::after(Duration::from_millis(50 * (i.len() as u64))).await;
     }
+
+    epd.power_off();
 
     loop {
         Timer::after(Duration::from_millis(100)).await;
