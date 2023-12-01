@@ -82,29 +82,48 @@ async fn main(_spawner: Spawner) {
     rst.set_high();
     delay.delay_ms(100_u32); // at least 10ms
 
-    epd.init(rp::epd7in5bv2::Config::mode_bw());
-    epd.configure_init_update();
+    // BWR OTP mode
+    epd.init(rp::epd7in5bv2::Config::mode_bwr_otp());
 
-    epd.clear();
+    epd.clear_bwr();
     epd.refresh(&mut delay);
     info!("Init ok");
+
+    let (w, h, raw) = text_image::monochrome_image!("out.png", channel = 1,);
+    epd.update_bw_frame(raw);
+    let (w, h, raw) = text_image::monochrome_image!("out.png", channel = 2,);
+    epd.update_red_frame(raw);
+
+    epd.refresh(&mut delay);
+
+    epd.reconfigure(rp::epd7in5bv2::Config::mode_bw());
+
+    Timer::after(Duration::from_millis(1000)).await;
+
+    let (w, h, raw) =
+        text_image::text_image!(
+            text = "烟水茫茫，\n千里斜阳暮。\n山无数。\n乱红如雨",
+            font = "./徐静蕾手写体.ttf",
+            font_size = 48.0,
+            line_spacing = 0,
+            inverse,
+            Gray4,
+        );
+
+    info!("w: {}, h: {}", w, h);
+
+    epd.set_partial_refresh(Rectangle::new(Point::new(536, 160), Size::new(w, h)));
+    epd.configure_init_clear();
+    epd.clear();
+    epd.refresh(&mut delay);
+
     epd.configure_partial_update();
 
-    let (w, h, raw) = text_image::text_image!(
-        text = "一月 感恩节 十八 30\n且将新火试新茶。\n诗酒趁年华。\nabcdefghijk\n1234567890",
-        font = "./msyh.ttf",
-        font_size = 32.0,
-        line_spacing = 0,
-        inverse,
-        Gray2,
-    );
+    epd.refresh_gray4_image(raw, &mut delay);
 
-    epd.set_partial_refresh(Rectangle::new(Point::new(400, 24), Size::new(w, h)));
-    //    epd.configure_partial_update();
-    //  epd.display_frame(raw);
-    // epd.refresh();
-    // epd.refresh_gray4_image(raw);
-    epd.refresh_gray2_image(raw, &mut delay);
+    epd.sleep();
+
+    loop {}
 
     let (w, h, raw) = text_image::text_image!(
         text = "一月 感恩节 十八 30\n且将新火试新茶。\n诗酒趁年华。\nabcdefghijk\n1234567890",
@@ -122,6 +141,16 @@ async fn main(_spawner: Spawner) {
     //    epd.refresh_gray2_image(&[0b01010101; 224 * 160 / 4]);
     // epd.refresh_gray4_image(raw);
     epd.refresh_gray4_image(raw, &mut delay);
+
+    Timer::after(Duration::from_millis(1000)).await;
+
+    epd.unset_partial_refresh();
+
+    epd.configure_init_clear();
+    epd.clear();
+    epd.refresh(&mut delay);
+
+    // epd.configure_partial_update();
 
     loop {
         led.toggle();
