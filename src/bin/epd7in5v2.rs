@@ -17,7 +17,7 @@ use embassy_rp::i2c::{self, Config};
 use embassy_rp::interrupt;
 use embassy_rp::peripherals::SPI0;
 use embassy_rp::spi::{self, Blocking, Spi};
-use embassy_time::{Delay, Duration, Timer};
+use embassy_time::{Delay, Duration, Instant, Timer};
 // use embedded_hal_1::i2c::I2c;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -40,7 +40,7 @@ use epd::drivers::{PervasiveDisplays, SSD1619A, UC8176};
 use epd::interface::{DisplayInterface, EPDInterfaceNoCS};
 use epd::{EPDInterface, FastUpdateEPD, EPD};
 use heapless::String;
-use rp::font::FONT_MUZAI_PIXEL;
+use rp::font::{FONT_MUZAI_PIXEL, FONT_SEG7_30X48};
 
 const BLACK: BinaryColor = BinaryColor::Off;
 const WHITE: BinaryColor = BinaryColor::On;
@@ -87,7 +87,8 @@ impl EPD7in5v2<'_> {
 
         // panel setting
         // KW-3f   KWR-2F BWROTP 0f BWOTP 1f
-        self.send_command_data(0x00, &[0x0F]);
+        // self.send_command_data(0x00, &[0x0F]);
+        self.send_command_data(0x00, &[0x2F]);
 
         // tres
         // 800x480
@@ -100,6 +101,99 @@ impl EPD7in5v2<'_> {
 
         // Tcon setting
         self.send_command_data(0x60, &[0x22]);
+
+        // LUT.
+        // 0x20 LUTC, VCOM LUT
+        // 0x21, LUTWW, W2W LUT
+        // 0x22, LUTKW/LUTR, K2W LUT
+        // 0x23, W2K LUT
+        // 0x24, K2K LUT
+        // 0x25, Border LUT. 43 bytes
+
+        // 00b: VCOM_DC
+        // 01b: VDH+VCOM_DC (VCOMH) 10b: VDL+VCOM_DC (VCOML) 11b: Floating
+        #[rustfmt::skip]
+        const LUT_VCOM: [u8; 60] = [
+            0x00,    0x0f, 0x00, 0x00, 0x00,    0x01,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+            0x00,    0x00, 0x00, 0x00, 0x00,    0x00,
+        ];
+
+        #[rustfmt::skip]
+        const LUT_W2W: [u8; 42] = [
+            0b00_00_00_00, 0x0f, 0x00, 0x00, 0x00, 0x00, // ?
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        #[rustfmt::skip]
+        const LUT_K2W: [u8; 60] = [
+            0b10_00_00_00, 0x0f, 0x00, 0x00, 0x00, 0x01,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        #[rustfmt::skip]
+        const LUT_W2K: [u8; 60] = [
+            // LEVEL, frame0, frame1, frame2, frame3, RP
+            0b01_00_00_00, 0x0f, 0x00, 0x00, 0x00, 0x01,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        #[rustfmt::skip]
+        const LUT_K2K: [u8; 60] = [
+            0x00, 0x02, 0x2c, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        #[rustfmt::skip]
+        const LUT_BD: [u8; 42] = [
+            0b00_00_00_00, 0x0f, 0x00, 0x00, 0x00, 0x01,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        self.send_command_data(0x20, &LUT_VCOM);
+        self.send_command_data(0x21, &LUT_W2W);
+        self.send_command_data(0x22, &LUT_K2W);
+        self.send_command_data(0x23, &LUT_W2K);
+        self.send_command_data(0x24, &LUT_K2K);
+        self.send_command_data(0x25, &LUT_BD); // can be the same as LUT_WW
     }
 
     fn clear(&mut self) {
@@ -169,16 +263,20 @@ async fn main(_spawner: Spawner) {
 
     fb.fill(BinaryColor::Off);
 
-    for i in 0..40 {
+    for i in 0..5 {
         Text::with_alignment(
-            "观自在菩萨 行深般若波罗蜜多时",
-            Point::new(50 + i * 20, i * 13 + 10), //skip 1 line
-            MonoTextStyle::new(&FONT_MUZAI_PIXEL, BinaryColor::Off),
+            "0123456789ABCDEF",
+            Point::new(10 + i * 20, i * 60 + 10), //skip 1 line
+            MonoTextStyle::new(&FONT_SEG7_30X48, BinaryColor::Off),
             Alignment::Left,
         )
         .draw(&mut fb)
         .unwrap();
     }
+    Line::new(Point::new(799, 0), Point::new(0, 479))
+        .into_styled(embedded_graphics::primitives::PrimitiveStyle::with_stroke(BinaryColor::Off, 1))
+        .draw(&mut fb)
+        .unwrap();
 
     // init
     rst.set_low();
@@ -192,12 +290,38 @@ async fn main(_spawner: Spawner) {
 
     epd.display_frame(fb.as_bytes());
 
+    let start = Instant::now();
     epd.refresh();
+    info!("refresh took {:?}", start.elapsed());
 
-    epd.sleep();
+    // epd.sleep();
 
+    Timer::after(Duration::from_millis(1000)).await;
+
+    let mut s = heapless::String::<128>::new();
+
+    let mut n = 0;
     loop {
-        Timer::after(Duration::from_millis(500)).await;
+        fb.fill(BinaryColor::Off);
+        s.clear();
+
+        let _ = core::write!(&mut s, "{:08}", n).unwrap();
+        Text::with_alignment(
+            &s,
+            Point::new(300, 0 + (n * 20) % 480), //skip 1 line
+            MonoTextStyle::new(&FONT_SEG7_30X48, BinaryColor::Off),
+            Alignment::Left,
+        )
+        .draw(&mut fb)
+        .unwrap();
+
+        n += 1;
+
+        epd.display_frame(fb.as_bytes());
+
+        epd.refresh();
+
+        Timer::after(Duration::from_millis(100)).await;
         led.toggle();
         info!("led toggle");
     }

@@ -37,10 +37,6 @@ use embedded_graphics::{
 };
 use embedded_graphics_core::pixelcolor::raw::LittleEndian;
 use embedded_hal::blocking::delay::DelayMs;
-use epd::display::{DisplaySize400x300, DisplaySize800x480, FrameBuffer};
-use epd::drivers::{PervasiveDisplays, SSD1619A, UC8176};
-use epd::interface::{DisplayInterface, EPDInterfaceNoCS};
-use epd::{EPDInterface, FastUpdateEPD, EPD};
 use heapless::String;
 use rp::font::{FONT_MUZAI_PIXEL, FONT_SEG7_30X48, FONT_WQY16};
 
@@ -69,7 +65,7 @@ impl EPD7in5v2<'_> {
         self.send_data(data);
     }
 
-    fn busy_wait(&mut self) {
+    pub fn busy_wait(&mut self) {
         loop {
             self.send_command(0x71);
             // negative logic
@@ -79,7 +75,7 @@ impl EPD7in5v2<'_> {
         }
     }
 
-    fn init(&mut self) {
+    pub fn init(&mut self) {
         // Power setting
         // VDHR=3.0V
         // VDH=15.0V
@@ -122,7 +118,7 @@ impl EPD7in5v2<'_> {
     - BORDER LUT, LUTBD, 0x25
      */
     /// Do INIT, clear
-    fn configure_init_update(&mut self) {
+    pub fn configure_init_update(&mut self) {
         #[rustfmt::skip]
         const LUT_VCOM: [u8; 60] = [
             0b00_00_00_00, 0x0f, 0x0f, 0x0f, 0x0f, 0x01,
@@ -206,7 +202,7 @@ impl EPD7in5v2<'_> {
         // self.send_command_data(0x25, &LUT_BD); // can be the same as LUT_WW
     }
 
-    fn configure_partial_update(&mut self) {
+    pub fn configure_partial_update(&mut self) {
         // 00b: VCOM_DC
         // 01b: VDH+VCOM_DC (VCOMH) 10b: VDL+VCOM_DC (VCOML) 11b: Floating
         #[rustfmt::skip]
@@ -294,7 +290,7 @@ impl EPD7in5v2<'_> {
 
     // Clear is required to set initial state of the panel.
     // Or else the panel will show random noise.
-    fn clear(&mut self) {
+    pub fn clear(&mut self) {
         self.send_command(0x10);
         for i in 0..48000 {
             self.send_data(&[0xff]);
@@ -305,25 +301,25 @@ impl EPD7in5v2<'_> {
         }
     }
 
-    fn display_frame(&mut self, buf: &[u8]) {
+    pub fn display_frame(&mut self, buf: &[u8]) {
         // write to NEW buf
         self.send_command(0x13);
         self.send_data(buf);
     }
 
-    fn refresh(&mut self) {
+    pub fn refresh(&mut self) {
         let mut delay = Delay;
         self.send_command(0x12);
         delay.delay_ms(100_u32); //must
         self.busy_wait();
     }
 
-    fn sleep(&mut self) {
+    pub fn sleep(&mut self) {
         self.send_command(0x02);
         self.busy_wait();
     }
 
-    fn set_partial_refresh(&mut self, rect: Rectangle) {
+    pub fn set_partial_refresh(&mut self, rect: Rectangle) {
         const PARTIAL_WINDOW: u8 = 0x90;
         const PARTIAL_IN: u8 = 0x91;
         const PARTIAL_OUT: u8 = 0x92;
@@ -341,12 +337,12 @@ impl EPD7in5v2<'_> {
         self.send_data(&[0x01]); // PT_SCAN=Gates scan both inside and outside of the partial window
     }
 
-    fn unset_partial_refresh(&mut self) {
+    pub fn unset_partial_refresh(&mut self) {
         const PARTIAL_OUT: u8 = 0x92;
         self.send_command(PARTIAL_OUT);
     }
 
-    fn power_off(&mut self) {
+    pub fn power_off(&mut self) {
         self.send_command(0x02);
         self.busy_wait();
     }

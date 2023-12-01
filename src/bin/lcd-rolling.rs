@@ -46,7 +46,7 @@ async fn main(_spawner: Spawner) {
 
     // create SPI
     let mut config = spi::Config::default();
-    config.frequency = 8_000_000;
+    config.frequency = 20_000_000;
     let spi = Spi::new_blocking(p.SPI0, clk, mosi, miso, config);
 
     // Configure CS
@@ -58,7 +58,7 @@ async fn main(_spawner: Spawner) {
     let mut disp = st7049a::Display::new(di);
     disp.init();
 
-    disp.clear();
+    disp.clear(Color3::White);
     disp.flush();
 
     //  disp.set_bg_light(Color3::Yellow);
@@ -88,7 +88,7 @@ async fn main(_spawner: Spawner) {
 
     //info!("=> {:?}", disp.buf);
 
-    disp.clear();
+    disp.clear(Color3::White);
 
     let colors = [
         Color3::Yellow,
@@ -110,7 +110,7 @@ async fn main(_spawner: Spawner) {
     //let mut i = 0;
     let mut off = 64;
     loop {
-        disp.clear();
+        disp.clear(Color3::White);
 
         let s = "Hello World!";
         for i in 0..s.len() {

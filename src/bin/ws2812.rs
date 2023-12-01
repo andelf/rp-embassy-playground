@@ -9,16 +9,21 @@
 use defmt::*;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{AnyPin, Input, Level, Output, Pin, Pull};
-use embassy_rp::pio::{FifoJoin, Pio, ShiftConfig, ShiftDirection};
-use embassy_rp::relocate::RelocatedProgram;
+use embassy_rp::pio::{FifoJoin, Pio, ShiftConfig, ShiftDirection, self};
 use embassy_time::{Delay, Duration, Instant, Timer};
 use fixed::traits::ToFixed;
+use embassy_rp::peripherals::PIO0;
+use embassy_rp::bind_interrupts;
 // use fixed::types::U56F8;
 
 use fixed_macro::types::U56F8;
 use micromath::F32Ext;
 
 use {defmt_rtt as _, panic_probe as _};
+
+bind_interrupts!(struct Irqs {
+    PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
+});
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
@@ -28,7 +33,7 @@ async fn main(_spawner: Spawner) {
     let mut delay = Delay;
     //let mut led = Output::new(p.PIN_25, Level::Low);
 
-    let mut pio0 = Pio::new(p.PIO0);
+    let mut pio0 = Pio::new(p.PIO0, Irqs);
 
     let mosi = p.PIN_19; // SI
     let clk = p.PIN_18; // SCLK
@@ -115,9 +120,9 @@ async fn main(_spawner: Spawner) {
     cfg.set_out_pins(&[&led_pin]);
     cfg.set_set_pins(&[&led_pin]);
 
-    let relocated = RelocatedProgram::new(&prg.program);
+    //    let relocated = RelocatedProgram::new();
     //cfg.use_program(&pio0.common.load_program(&relocated), &[&clk_pin, &cs_pin]); // side set pins
-    cfg.use_program(&pio0.common.load_program(&relocated), &[&neopixel_pin]);
+    cfg.use_program(&pio0.common.load_program(&prg.program), &[&neopixel_pin]);
 
     // no div, full speed
     //cfg.clock_divider = 9_u16.into();
