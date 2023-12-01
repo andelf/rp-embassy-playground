@@ -44,9 +44,9 @@ panic-probe = { version = "0.3", features = ["print-defmt"] }
 
 ssd1306 = "0.8"
 embedded-graphics = "0.8"
+embedded-hal-02 = {package = "embedded-hal",version = "0.2.7" }
 # embedded-graphics = { path = "../embedded-graphics" }
-embedded-hal = "0.2.7"
-embedded-hal-1 = { package = "embedded-hal", version = "=1.0.0-rc.2" }
+embedded-hal = { package = "embedded-hal", version = "=1.0.0-rc.2" }
 
 display-interface = "0.4.1"
 heapless = "0.8"

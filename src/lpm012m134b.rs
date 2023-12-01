@@ -3,10 +3,7 @@
 //! JDI 240x240 round display
 //! RGB222 parallel
 
-use embedded_hal::{
-    blocking::delay::DelayUs,
-    digital::v2::{OutputPin, ToggleableOutputPin},
-};
+use embedded_hal::{digital::{OutputPin, ToggleableOutputPin}, delay::DelayNs};
 
 use embedded_graphics::{
     pixelcolor::raw::RawU8,
@@ -117,7 +114,7 @@ impl DrawTarget for LPM012M134B {
 }
 
 impl LPM012M134B {
-    pub fn reset<E>(rst: &mut dyn OutputPin<Error = E>, delay: &mut dyn DelayUs<u16>) -> Result<(), E> {
+    pub fn reset<E>(rst: &mut dyn OutputPin<Error = E>, delay: &mut dyn DelayNs) -> Result<(), E> {
         rst.set_high()?;
         rst.set_low()?;
         delay.delay_us(500);
@@ -154,7 +151,7 @@ impl LPM012M134B {
         g2: &mut dyn OutputPin<Error = E>,
         b1: &mut dyn OutputPin<Error = E>,
         b2: &mut dyn OutputPin<Error = E>,
-        delay: &mut dyn DelayUs<u16>,
+        delay: &mut dyn DelayNs,
     ) -> Result<(), E> {
         vst.set_high()?;
         delay.delay_us(20_000);

@@ -8,14 +8,16 @@ use heapless::String;
 pub mod ch463;
 pub mod color;
 pub mod font;
-pub mod ssd1327;
-pub mod st7049a;
+// pub mod ssd1327;
+// pub mod st7049a;
 pub mod thermistor;
 pub mod ui;
 
-pub mod lpm009m360a;
-pub mod lpm012m134b;
-pub mod lpm013m126a;
+pub mod epd7in5bv2;
+
+// pub mod lpm009m360a;
+// pub mod lpm012m134b;
+// pub mod lpm013m126a;
 
 pub fn convert_to_celsius(raw_temp: u16) -> f32 {
     // According to chapter 4.9.5. Temperature Sensor in RP2040 datasheet

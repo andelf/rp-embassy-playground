@@ -9,8 +9,9 @@ use embedded_graphics::{
     primitives::Rectangle,
     Pixel,
 };
-use embedded_hal::blocking::delay::DelayUs;
-use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::{digital::OutputPin, delay::DelayNs};
+//use embedded_hal::blocking::delay::DelayUs;
+//use embedded_hal::digital::v2::OutputPin;
 
 const WIDTH: u32 = 128;
 const HEIGHT: u32 = 128;
@@ -37,7 +38,7 @@ impl<DI: WriteOnlyDataCommand> Display<DI> {
     pub fn reset<RST, DELAY>(&mut self, rst: &mut RST, delay: &mut DELAY) -> Result<(), DisplayError>
     where
         RST: OutputPin,
-        DELAY: DelayUs<u32>,
+        DELAY: DelayUs,
     {
         rst.set_high().map_err(|_| DisplayError::BusWriteError)?;
         delay.delay_us(100_000);
