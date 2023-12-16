@@ -54,12 +54,7 @@ async fn main(spawner: Spawner) {
     info!("io setting");
 
     spawner
-        .spawn(jogball_task(
-            p.PIN_8.degrade(),
-            p.PIN_7.degrade(),
-            p.PIN_6.degrade(),
-            p.PIN_9.degrade(),
-        ))
+        .spawn(jogball_task(p.PIN_8.degrade(), p.PIN_7.degrade(), p.PIN_6.degrade(), p.PIN_9.degrade()))
         .unwrap();
 
     let mut state = [0; 2];

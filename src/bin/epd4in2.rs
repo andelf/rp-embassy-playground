@@ -50,8 +50,8 @@ async fn main(_spawner: Spawner) {
 
     let mut delay = Delay;
 
-    let irq = interrupt::take!(ADC_IRQ_FIFO);
-    let mut adc = Adc::new(p.ADC, irq, adc::Config::default());
+    // let irq = interrupt::take!(ADC_IRQ_FIFO);
+    // let mut adc = Adc::new(p.ADC, irq, adc::Config::default());
 
     let busy = p.PIN_16; // not used
     let mosi = p.PIN_19;
@@ -91,7 +91,7 @@ async fn main(_spawner: Spawner) {
     loop {
         loop_cnt += 1;
         buf.clear();
-        let temp = adc.read_temperature().await;
+        let temp = 123; // adc.read_temperature().await;
         let val = rp::convert_to_celsius(temp);
         core::write!(buf, "Temp: {:.3} degrees", val);
         values[cursor] = val;
@@ -144,24 +144,14 @@ async fn main(_spawner: Spawner) {
             buf.clear();
             core::write!(buf, "{:.2} C", min);
             let style = MonoTextStyleBuilder::new().font(&FONT_5X8).text_color(BLACK).build();
-            Text::with_alignment(
-                &buf,
-                Point::new(5 + loop_cnt * 3 % 200, 240 + 8),
-                style,
-                Alignment::Left,
-            )
-            .draw(&mut display)
-            .unwrap();
+            Text::with_alignment(&buf, Point::new(5 + loop_cnt * 3 % 200, 240 + 8), style, Alignment::Left)
+                .draw(&mut display)
+                .unwrap();
             buf.clear();
             core::write!(buf, "{:.2} C", max);
-            Text::with_alignment(
-                &buf,
-                Point::new(5 + loop_cnt * 3 % 200, 140 - 8),
-                style,
-                Alignment::Left,
-            )
-            .draw(&mut display)
-            .unwrap();
+            Text::with_alignment(&buf, Point::new(5 + loop_cnt * 3 % 200, 140 - 8), style, Alignment::Left)
+                .draw(&mut display)
+                .unwrap();
         }
 
         // refresh

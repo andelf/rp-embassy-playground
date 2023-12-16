@@ -52,6 +52,6 @@ pub fn analog_to_temp(raw: u16) -> f32 {
     let max_temp = TEMPTABLE_5[max][1] as f32;
     let min_raw = TEMPTABLE_5[min][0] as f32;
     let max_raw = TEMPTABLE_5[max][0] as f32;
-    
+
     min_temp + (max_temp - min_temp) * (raw as f32 - min_raw) / (max_raw - min_raw)
 }

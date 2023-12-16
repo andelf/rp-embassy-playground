@@ -66,12 +66,7 @@ async fn main(spawner: Spawner) {
     info!("io setting");
 
     spawner
-        .spawn(jogball_task(
-            p.PIN_6.degrade(),
-            p.PIN_7.degrade(),
-            p.PIN_8.degrade(),
-            p.PIN_9.degrade(),
-        ))
+        .spawn(jogball_task(p.PIN_6.degrade(), p.PIN_7.degrade(), p.PIN_8.degrade(), p.PIN_9.degrade()))
         .unwrap();
 
     let mosi = p.PIN_19;
@@ -100,10 +95,7 @@ async fn main(spawner: Spawner) {
     let mut state = [0; 2];
 
     for i in 1..16 {
-        let style = MonoTextStyleBuilder::new()
-            .font(&FONT_5X8)
-            .text_color(Gray4::new(i))
-            .build();
+        let style = MonoTextStyleBuilder::new().font(&FONT_5X8).text_color(Gray4::new(i)).build();
         Text::with_alignment("Hello World", Point::new(5, (i as i32) * 8), style, Alignment::Left)
             .draw(&mut display)
             .unwrap();

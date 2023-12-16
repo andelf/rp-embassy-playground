@@ -8,12 +8,12 @@
 
 use defmt::*;
 use embassy_executor::Spawner;
+use embassy_rp::bind_interrupts;
 use embassy_rp::gpio::{AnyPin, Input, Level, Output, Pin, Pull};
-use embassy_rp::pio::{FifoJoin, Pio, ShiftConfig, ShiftDirection, self};
+use embassy_rp::peripherals::PIO0;
+use embassy_rp::pio::{self, FifoJoin, Pio, ShiftConfig, ShiftDirection};
 use embassy_time::{Delay, Duration, Instant, Timer};
 use fixed::traits::ToFixed;
-use embassy_rp::peripherals::PIO0;
-use embassy_rp::bind_interrupts;
 // use fixed::types::U56F8;
 
 use fixed_macro::types::U56F8;

@@ -94,16 +94,17 @@ async fn main(_spawner: Spawner) {
 
     disp.clear(Color3::Black);
 
-    let colors = [
-        Color3::RED,
-        Color3::Green,
-        Color3::Blue,
-        Color3::Yellow,
-        Color3::Pink,
-        Color3::Cyan,
-        // Color3::White,
-        Color3::Black,
-    ];
+    let colors =
+        [
+            Color3::RED,
+            Color3::Green,
+            Color3::Blue,
+            Color3::Yellow,
+            Color3::Pink,
+            Color3::Cyan,
+            // Color3::White,
+            Color3::Black,
+        ];
     let mut cit = colors.iter().cycle();
 
     //let mut i = 0;

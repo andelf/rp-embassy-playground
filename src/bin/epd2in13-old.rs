@@ -51,8 +51,8 @@ async fn main(_spawner: Spawner) {
 
     let mut delay = Delay;
 
-    let irq = interrupt::take!(ADC_IRQ_FIFO);
-    let mut adc = Adc::new(p.ADC, irq, adc::Config::default());
+    // let irq = interrupt::take!(ADC_IRQ_FIFO);
+    // let mut adc = Adc::new(p.ADC, irq, adc::Config::default());
 
     let busy = p.PIN_16; // not used
     let csn = p.PIN_17;
@@ -74,12 +74,12 @@ async fn main(_spawner: Spawner) {
 
     let di = EPDInterfaceNoCS::new(spi, dc, rst, busy);
 
-    // let mut display: FastUpdateEPD<_, DisplaySize400x300, SSD1619A> = FastUpdateEPD::new(di);
-    // let mut display: EPD<_, DisplaySize400x300, UC8176> = EPD::new(di);
+    // let mut display: FastUpdateEPD<_, DisplaySize122x250, SSD1619A> = FastUpdateEPD::new(di);
+    let mut display: EPD<_, DisplaySize400x300, UC8176> = EPD::new(di);
     // let mut display: EPD<_, DisplaySize122x250, IL3895> = EPD::new(di);
-    let mut display: FastUpdateEPD<_, DisplaySize122x250, IL3895> = FastUpdateEPD::new(di);
+    //let mut display: FastUpdateEPD<_, DisplaySize122x250, IL3895> = FastUpdateEPD::new(di);
     // let mut display: EPD<_, DisplaySize122x250, SSD1608> = EPD::new(di);
-    //let mut display: EPD<_, DisplaySize104x201, IL3895> = EPD::new(di);
+    //    let mut display: EPD<_, DisplaySize104x201, IL3895> = EPD::new(di);
 
     display.set_rotation(90);
     display.init(&mut delay);

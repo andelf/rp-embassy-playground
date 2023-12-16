@@ -98,16 +98,17 @@ async fn main(_spawner: Spawner) {
 
     let mut offs = 20;
 
-    let colors = [
-        Rgb111::WHITE,
-        Rgb111::RED,
-        Rgb111::MAGENTA,
-        Rgb111::YELLOW,
-        Rgb111::GREEN,
-        Rgb111::BLUE,
-        Rgb111::CYAN,
-        Rgb111::BLACK,
-    ];
+    let colors =
+        [
+            Rgb111::WHITE,
+            Rgb111::RED,
+            Rgb111::MAGENTA,
+            Rgb111::YELLOW,
+            Rgb111::GREEN,
+            Rgb111::BLUE,
+            Rgb111::CYAN,
+            Rgb111::BLACK,
+        ];
     let mut color_index = 0;
     loop {
         //display.clear(colors[(offs + 3) % colors.len()]);

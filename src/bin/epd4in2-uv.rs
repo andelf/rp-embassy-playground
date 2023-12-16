@@ -151,24 +151,14 @@ async fn main(_spawner: Spawner) {
             buf.clear();
             core::write!(buf, "{:.3} V", min);
             let style = MonoTextStyleBuilder::new().font(&FONT_7X13).text_color(BLACK).build();
-            Text::with_alignment(
-                &buf,
-                Point::new(5 + loop_cnt * 3 % 200, 240 + 9),
-                style,
-                Alignment::Left,
-            )
-            .draw(&mut display)
-            .unwrap();
+            Text::with_alignment(&buf, Point::new(5 + loop_cnt * 3 % 200, 240 + 9), style, Alignment::Left)
+                .draw(&mut display)
+                .unwrap();
             buf.clear();
             core::write!(buf, "{:.3} V", max);
-            Text::with_alignment(
-                &buf,
-                Point::new(5 + loop_cnt * 3 % 200, 140 - 9),
-                style,
-                Alignment::Left,
-            )
-            .draw(&mut display)
-            .unwrap();
+            Text::with_alignment(&buf, Point::new(5 + loop_cnt * 3 % 200, 140 - 9), style, Alignment::Left)
+                .draw(&mut display)
+                .unwrap();
         }
 
         // refresh

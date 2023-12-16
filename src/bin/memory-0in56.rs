@@ -58,9 +58,6 @@ async fn main(_spawner: Spawner) {
     display.clear(BinaryColor::On);
     display.update(&mut delay);
 
-
-
-
     info!("all initialized");
 
     const POINTS: usize = 8;

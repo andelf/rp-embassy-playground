@@ -140,9 +140,7 @@ async fn main(_spawner: Spawner) {
 
         display.clear(Rgb565::BLACK);
 
-        Text::new("@andelf", Point::new(5, 20), text_style)
-            .draw(&mut display)
-            .unwrap();
+        Text::new("@andelf", Point::new(5, 20), text_style).draw(&mut display).unwrap();
 
         for ([idx, idy], color) in [
             ([0, 1], Rgb565::YELLOW),

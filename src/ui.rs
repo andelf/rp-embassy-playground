@@ -55,14 +55,7 @@ where
         if range > 0.05 {
             let mut last = None;
             // only draw if range is big enough
-            for (idx, v) in self
-                .values
-                .iter()
-                .cycle()
-                .skip(self.cursor)
-                .take(self.values.len())
-                .enumerate()
-            {
+            for (idx, v) in self.values.iter().cycle().skip(self.cursor).take(self.values.len()).enumerate() {
                 let y = self.bbox.bottom_right().unwrap().y - ((v - min) / range * 100.0) as i32;
                 let x = self.bbox.top_left.x + 4 * idx as i32;
                 let p = Point::new(x, y);

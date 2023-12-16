@@ -52,9 +52,9 @@ async fn main(_spawner: Spawner) {
     pwm_conf.divider = 2i32.to_fixed();
     let _pwm = Pwm::new_output_b(p.PWM_CH2, p.PIN_21, pwm_conf.clone());
 
-   // let mut display: MemoryLCD<LS013B7DH03, _, _> = MemoryLCD::new(spi, cs);
+    // let mut display: MemoryLCD<LS013B7DH03, _, _> = MemoryLCD::new(spi, cs);
 
-   let mut display: MemoryLCD<LS027B7DH01, _, _> = MemoryLCD::new(spi, cs);
+    let mut display: MemoryLCD<LS027B7DH01, _, _> = MemoryLCD::new(spi, cs);
 
     //display.set_rotation(memory_lcd_spi::framebuffer::Rotation::Deg90);
     display.clear(BinaryColor::On);

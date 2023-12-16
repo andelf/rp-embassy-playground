@@ -73,13 +73,7 @@ fn send_command_data(scl: &mut Output<AnyPin>, sdi: &mut Output<AnyPin>, csx: &m
     csx.set_high();
 }
 
-fn send_command_with_mem(
-    scl: &mut Output<AnyPin>,
-    sdi: &mut Output<AnyPin>,
-    csx: &mut Output<AnyPin>,
-    cmd: u8,
-    data: &[u8],
-) {
+fn send_command_with_mem(scl: &mut Output<AnyPin>, sdi: &mut Output<AnyPin>, csx: &mut Output<AnyPin>, cmd: u8, data: &[u8]) {
     csx.set_low();
 
     sdi.set_low();

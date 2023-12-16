@@ -123,10 +123,7 @@ async fn main(_spawner: Spawner) {
         while let Ok(Some(ev)) = it7259.poll_event() {
             match ev {
                 it7259::Event::Gesture(it7259::Gesture::Flick {
-                    start_y,
-                    end_y,
-                    direction,
-                    ..
+                    start_y, end_y, direction, ..
                 }) => {
                     info!("flick tap");
                     let diff = (start_y as f32 - end_y as f32).abs();

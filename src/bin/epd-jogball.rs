@@ -47,12 +47,7 @@ async fn main(spawner: Spawner) {
     let mut bkled = Output::new(p.PIN_4, Level::High);
 
     spawner
-        .spawn(jogball_task(
-            p.PIN_8.degrade(),
-            p.PIN_7.degrade(),
-            p.PIN_6.degrade(),
-            p.PIN_9.degrade(),
-        ))
+        .spawn(jogball_task(p.PIN_8.degrade(), p.PIN_7.degrade(), p.PIN_6.degrade(), p.PIN_9.degrade()))
         .unwrap();
 
     // EPD init

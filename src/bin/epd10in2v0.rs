@@ -1,4 +1,4 @@
-//! 局部刷新, BW
+//! 10in2 BWR
 
 #![no_std]
 #![no_main]
@@ -68,7 +68,9 @@ impl EPD10in2<'_> {
 
     // negative logic
     pub fn busy_wait(&mut self) {
+        // self.send_command_data(0x2F, &[0x04]); // busy read
         loop {
+            info!("busy");
             if self.busy.is_low() {
                 info!("busy out");
                 break;
@@ -111,16 +113,31 @@ impl EPD10in2<'_> {
         // set vcom value
         self.send_command_data(0x2C, &[0x44]);
 
-        //        self.send_command_data(0x37, &[0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0xFF, 0xFF, 0xFF, 0xFF]); //???
-        self.send_command_data(0x37, &[0x00; 10]); //???
-
         // setting X direction start/end position of RAM
         // 640 -> 639 => 0x27F
         // 960 -> 959 => 0x3BF
         self.send_command_data(0x44, &[0x00, 0x00, 0xBF, 0x03]); // 长
-
-        // setting Y direction start/end position of RAM
+                                                                 // setting Y direction start/end position of RAM
         self.send_command_data(0x45, &[0x00, 0x00, 0x7F, 0x02]);
+        self.send_command_data(0x4E, &[0x00, 0x00]);
+        self.send_command_data(0x4F, &[0x00, 0x00]);
+
+        self.send_command_data(0x37, &[0x00; 10]); // ALL Mode 1
+
+        // Display Option
+        /* #[rustfmt::skip]
+        self.send_command_data(0x37, &[
+            0x00,
+            0xFF, //B
+            0xFF, //C
+            0xFF, //D
+            0xFF, //E
+            0x4F, //F, RAM Ping-pong enable. only in Display Mode 2
+            0xFF, //G
+            0xFF, //H
+            0xFF, //I
+            0xFF, //J
+        ]); // MODE 2*/
 
         // Load Waveform
         // 0x91, Load LUT with Mode 1
@@ -130,6 +147,15 @@ impl EPD10in2<'_> {
 
         // Display Update Control 2
         self.send_command_data(0x22, &[0xCF]);
+
+        /*
+        self.send_command_data(0x22, &[0x99]); // Load LUT with Mode 2
+        self.send_command(0x20);
+        self.busy_wait();
+
+        // Display Update Control 2
+        self.send_command_data(0x22, &[0xC7]);
+        */
     }
 
     // Clear is required to set initial state of the panel.
@@ -142,18 +168,22 @@ impl EPD10in2<'_> {
         const NBUF: usize = 960 * 640 / 8;
         self.send_command(0x24);
         for i in 0..NBUF {
-            self.send_data(&[0xff]);
+            self.send_data(&[0xff]); // W
         }
+
+        // reset X/Y ram counter
+        //  self.send_command_data(0x4E, &[0x00, 0x00]);
+        //self.send_command_data(0x4F, &[0x00, 0x00]);
         self.send_command(0x26);
         for i in 0..NBUF {
-            self.send_data(&[0x00]);
+            self.send_data(&[0x00]); // Red off
         }
     }
 
     pub fn update_bw_frame(&mut self, buf: &[u8]) {
         // write to NEW buf
-        self.send_command_data(0x4E, &[0x00, 0x00]);
-        self.send_command_data(0x4F, &[0x00, 0x00]);
+        //  self.send_command_data(0x4E, &[0x00, 0x00]);
+        //    self.send_command_data(0x4F, &[0x00, 0x00]);
 
         self.send_command(0x24);
         self.send_data(buf);
@@ -161,8 +191,8 @@ impl EPD10in2<'_> {
 
     pub fn update_red_frame(&mut self, buf: &[u8]) {
         // write to NEW buf
-        self.send_command_data(0x4E, &[0x00, 0x00]);
-        self.send_command_data(0x4F, &[0x00, 0x00]);
+        //        self.send_command_data(0x4E, &[0x00, 0x00]);
+        //      self.send_command_data(0x4F, &[0x00, 0x00]);
 
         self.send_command(0x26);
         self.send_data(buf);
@@ -181,17 +211,24 @@ impl EPD10in2<'_> {
     }
 
     pub fn set_partial_refresh(&mut self, rect: Rectangle) {
-        let x0 = (rect.top_left.x as u16) & 0b1111111000;
+        let x0 = (rect.top_left.x as u16);
         let x1 = rect.bottom_right().unwrap().x as u16;
-        let y0 = rect.top_left.y as u16 | 0b111;
+        let y0 = rect.top_left.y as u16;
         let y1 = rect.bottom_right().unwrap().y as u16;
+
         self.send_command_data(0x44, &[(x0 & 0xff) as u8, (x0 >> 8) as u8, (x1 & 0xff) as u8, (x1 >> 8) as u8]);
         self.send_command_data(0x45, &[(y0 & 0xff) as u8, (y0 >> 8) as u8, (y1 & 0xff) as u8, (y1 >> 8) as u8]);
+
+        // set X/Y ram counter
+        self.send_command_data(0x4E, &[(x0 & 0xff) as u8, (x0 >> 8) as u8]);
+        self.send_command_data(0x4F, &[(y0 & 0xff) as u8, (y0 >> 8) as u8]);
     }
 
     pub fn unset_partial_refresh(&mut self) {
-        const PARTIAL_OUT: u8 = 0x92;
-        self.send_command(PARTIAL_OUT);
+        self.send_command_data(0x44, &[0x00, 0x00, 0xBF, 0x03]);
+        self.send_command_data(0x45, &[0x00, 0x00, 0x7F, 0x02]);
+        self.send_command_data(0x4E, &[0x00, 0x00]);
+        self.send_command_data(0x4F, &[0x00, 0x00]);
     }
 
     pub fn power_off(&mut self) {
@@ -226,6 +263,54 @@ impl EPD10in2<'_> {
             0x22, 0x22, 0x22, 0x22, 0x22,
         ];
 
+        self.send_command_data(0x32, LUT);
+    }
+
+    pub fn configure_du(&mut self) {
+        #[rustfmt::skip]
+        const LUT: &[u8] = &[
+            0b01_00_00_00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,//LUT0
+            0b00_00_00_00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,//LUT1
+            0b00_00_00_00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,//LUT2=LUT0
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,//5
+            // TP[xA, xB, xC, xD], RP
+            0x18,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,//7
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,//9
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x22,0x22,0x22,0x22,0x22
+        ];
+        self.send_command_data(0x32, LUT);
+    }
+
+    pub fn configure_du2(&mut self) {
+        #[rustfmt::skip]
+        const LUT: &[u8] = &[
+            0b01_00_00_00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,//LUT0
+            0b00_00_00_00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,//LUT1
+            0b01_00_00_00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,//LUT2=LUT0
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,//5
+            // TP[xA, xB, xC, xD], RP
+            0x18,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,//7
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,//9
+            0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,
+            0x22,0x22,0x22,0x22,0x22
+        ];
         self.send_command_data(0x32, LUT);
     }
 
@@ -277,7 +362,7 @@ async fn main(_spawner: Spawner) {
     config.frequency = 28_000_000;
     let spi = Spi::new_blocking_txonly(p.SPI0, clk, mosi, config);
 
-    info!("spi created");
+    info!("init ok");
 
     // Configure CS
     let cs = Output::new(csn, Level::Low);
@@ -297,9 +382,44 @@ async fn main(_spawner: Spawner) {
     //epd.configure_init_clear();
 
     epd.clear();
+    epd.clear();
+    epd.refresh();
+    info!("clear ok!!!");
 
+    epd.configure_du();
+
+    let mut fb = Framebuffer::<
+        BinaryColor,
+        _,
+        LittleEndian,
+        960,
+        640,
+        { embedded_graphics::framebuffer::buffer_size::<BinaryColor>(960, 640) },
+    >::new();
+    fb.clear(BinaryColor::On);
+
+    for h in 1..=10 {
+        Text::with_alignment(
+            "般若波罗蜜多心经",
+            Point::new(100, 100 + h * 20),
+            MonoTextStyle::new(&FONT_WQY16, BinaryColor::Off), // black
+            Alignment::Left,
+        )
+        .draw(&mut fb)
+        .unwrap();
+    }
+    epd.update_bw_frame(fb.data());
+    // epd.update_bw_frame(fb.data());
     epd.refresh();
 
+    loop {
+        led.toggle();
+        Timer::after_millis(1000).await;
+
+        info!("tick");
+    }
+
+    //  init BWR
     let mut fb = Framebuffer::<
         BinaryColor,
         _,
@@ -317,6 +437,24 @@ async fn main(_spawner: Spawner) {
     epd.update_bw_frame(raw);
     let (w, h, raw) = text_image::monochrome_image!("remap_2.gif", channel = 2,);
     epd.update_red_frame(raw);
+
+    epd.refresh();
+
+    Timer::after_millis(1000).await;
+
+    let (w, h, raw) = text_image::text_image!(
+        text = "一月 感恩节 十八 30\n且将新火试新茶。\n诗酒趁年华。\nabcdefghijk\n1234567890",
+        font = "./徐静蕾手写体.ttf",
+        font_size = 32.0,
+        line_spacing = -2,
+        inverse,
+    );
+    epd.set_partial_refresh(Rectangle::new(Point::new(400, 24), Size::new(w, h)));
+    //    epd.configure_partial_update();
+    //  epd.display_frame(raw);
+    // epd.refresh();
+    // epd.refresh_gray4_image(raw);
+    epd.update_bw_frame(raw);
 
     epd.refresh();
 

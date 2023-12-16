@@ -289,9 +289,14 @@ async fn main(_spawner: Spawner) {
 
     //  nt7538.turn_on_display();
 
-    let mut fb =
-        Framebuffer::<BinaryColor, _, LittleEndian, 64, 130, { embedded_graphics::framebuffer::buffer_size::<BinaryColor>(64, 130) }>::new(
-        );
+    let mut fb = Framebuffer::<
+        BinaryColor,
+        _,
+        LittleEndian,
+        64,
+        130,
+        { embedded_graphics::framebuffer::buffer_size::<BinaryColor>(64, 130) },
+    >::new();
 
     info!("size {}", size_of_val(&fb));
 

@@ -30,15 +30,8 @@ pub struct Spi9Bit<'l> {
 }
 
 impl<'l> Spi9Bit<'l> {
-    pub fn new(
-        pio: impl Peripheral<P = PIO0> + 'l,
-        clk: impl PioPin,
-        mosi: impl PioPin,
-        cs: impl PioPin,
-    ) -> Spi9Bit<'l> {
-        let Pio {
-            mut common, mut sm0, ..
-        } = Pio::new(pio);
+    pub fn new(pio: impl Peripheral<P = PIO0> + 'l, clk: impl PioPin, mosi: impl PioPin, cs: impl PioPin) -> Spi9Bit<'l> {
+        let Pio { mut common, mut sm0, .. } = Pio::new(pio);
 
         let prg = pio_proc::pio_asm!(
             r#"
@@ -192,9 +185,7 @@ async fn main(_spawner: Spawner) {
         let fps = frames as f32 / start.elapsed().as_millis() as f32 * 1000.0;
 
         core::write!(&mut buf, "count: {}\ntotal fps: {:.1}", frames, fps).unwrap();
-        Text::new(&buf, Point::new(20, 100), char_style)
-            .draw(&mut display)
-            .unwrap();
+        Text::new(&buf, Point::new(20, 100), char_style).draw(&mut display).unwrap();
         frames += 1;
 
         //di.write_data(0xaa);

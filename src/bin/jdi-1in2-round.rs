@@ -103,24 +103,22 @@ async fn main(_spawner: Spawner) {
     LPM012M134B::reset(&mut xrst, &mut delay);
     LPM012M134B::init(&mut vst, &mut vck, &mut hst, &mut hck, &mut enb);
 
-    let style = MonoTextStyleBuilder::new()
-        .font(&FONT_10X20)
-        .text_color(Rgb222::CYAN)
-        .build();
+    let style = MonoTextStyleBuilder::new().font(&FONT_10X20).text_color(Rgb222::CYAN).build();
     Text::with_alignment("Hello World", Point::new(120, 120), style, Alignment::Center)
         .draw(&mut display)
         .unwrap();
 
-    let _color = [
-        Rgb222::WHITE,
-        Rgb222::BLACK,
-        Rgb222::RED,
-        Rgb222::GREEN,
-        Rgb222::BLUE,
-        Rgb222::CYAN,
-        Rgb222::MAGENTA,
-        Rgb222::YELLOW,
-    ];
+    let _color =
+        [
+            Rgb222::WHITE,
+            Rgb222::BLACK,
+            Rgb222::RED,
+            Rgb222::GREEN,
+            Rgb222::BLUE,
+            Rgb222::CYAN,
+            Rgb222::MAGENTA,
+            Rgb222::YELLOW,
+        ];
 
     let raw_image: ImageRaw<Rgb222, BigEndian> = ImageRaw::new(include_bytes!("../../240x240.raw"), 240);
     Image::new(&raw_image, Point::new(1, 1)).draw(&mut display).unwrap();
@@ -145,18 +143,13 @@ async fn main(_spawner: Spawner) {
         .unwrap();
 
     display.flush(
-        &mut vst, &mut vck, &mut hst, &mut hck, &mut enb, &mut r1, &mut r2, &mut g1, &mut g2, &mut b1, &mut b2,
-        &mut delay,
+        &mut vst, &mut vck, &mut hst, &mut hck, &mut enb, &mut r1, &mut r2, &mut g1, &mut g2, &mut b1, &mut b2, &mut delay,
     );
 
     for i in 1..=64 {
         continue;
         let c = Rgb222::from_raw(i);
-        let style = PrimitiveStyleBuilder::new()
-            .stroke_color(c)
-            .stroke_width(10)
-            .fill_color(c)
-            .build();
+        let style = PrimitiveStyleBuilder::new().stroke_color(c).stroke_width(10).fill_color(c).build();
         Arc::new(
             Point::new(1, 1),
             240,
@@ -169,8 +162,7 @@ async fn main(_spawner: Spawner) {
 
         //
         display.flush(
-            &mut vst, &mut vck, &mut hst, &mut hck, &mut enb, &mut r1, &mut r2, &mut g1, &mut g2, &mut b1, &mut b2,
-            &mut delay,
+            &mut vst, &mut vck, &mut hst, &mut hck, &mut enb, &mut r1, &mut r2, &mut g1, &mut g2, &mut b1, &mut b2, &mut delay,
         );
         //       Timer::after(Duration::MIN).await;
         Timer::after(Duration::from_millis(0)).await;

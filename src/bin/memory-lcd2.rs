@@ -190,9 +190,7 @@ async fn main(_spawner: Spawner) {
             .unwrap();
         }
 
-        Text::new("@andelf", Point::new(2, 10), text_style)
-            .draw(&mut *display)
-            .unwrap();
+        Text::new("@andelf", Point::new(2, 10), text_style).draw(&mut *display).unwrap();
 
         display.update(&mut delay);
         // Timer::after(Duration::from_millis(10)).await;

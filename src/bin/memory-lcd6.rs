@@ -93,10 +93,7 @@ async fn main(_spawner: Spawner) {
 
     let mut inc = true;
 
-    let text_style = MonoTextStyleBuilder::new()
-        .font(&FONT_7X14)
-        .text_color(Rgb111::RED)
-        .build();
+    let text_style = MonoTextStyleBuilder::new().font(&FONT_7X14).text_color(Rgb111::RED).build();
 
     loop {
         for (i, [x, y, z]) in orig_points.iter().copied().enumerate() {
@@ -153,9 +150,7 @@ async fn main(_spawner: Spawner) {
             .unwrap();
         }
 
-        Text::new("@andelf", Point::new(2, 10), text_style)
-            .draw(&mut *display)
-            .unwrap();
+        Text::new("@andelf", Point::new(2, 10), text_style).draw(&mut *display).unwrap();
 
         display.update(&mut delay);
         // Timer::after(Duration::from_micros(1)).await;

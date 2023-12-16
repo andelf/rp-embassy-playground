@@ -152,11 +152,12 @@ fn main() -> ! {
         threshold: 32,
     };
     //
-    cfg.shift_in = ShiftConfig {
-        auto_fill: true, // push
-        direction: ShiftDirection::Left,
-        threshold: 32,
-    };
+    cfg.shift_in =
+        ShiftConfig {
+            auto_fill: true, // push
+            direction: ShiftDirection::Left,
+            threshold: 32,
+        };
     // ????
     cfg.fifo_join = FifoJoin::RxOnly;
 

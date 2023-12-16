@@ -1,5 +1,5 @@
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-runner = "probe-run -v --chip RP2040"
+runner = "probe-run -v --shorten-paths --chip RP2040"
 # producing too much output logs
 # runner = "probe-rs-cli run --chip RP2040 --protocol swd"
 
