@@ -16,6 +16,7 @@ pub struct Config {
     /// KW-3f KWR-2F BWROTP-0f BWOTP-1f
     /// Pannel mode
     mode: u8,
+    // Auto New to Old copy enable
     pub n2ocp: bool,
     /// 800
     pub nsource: u16,
@@ -177,6 +178,10 @@ where
     /// LUT for INIT
     pub fn configure_init_clear(&mut self) {
         #[rustfmt::skip]
+        // 0b00: VCOM_DC.
+        // 0b01: VDH+VCOM_DC (VCOMH)
+        // 0b10: VDL+VCOM_DC (VCOML)
+        // 0b11: Floating.
         const LUT_VCOM: [u8; 60] = [
             0b00,    0x0f, 0x0f, 0x0f, 0x0f,    0x01,
             0x00,    0x1A, 0x00, 0x10, 0x20,    0x01,
@@ -288,6 +293,7 @@ where
 
         #[rustfmt::skip]
         const LUT_K2W: [u8; 60] = [
+            // AA_, T_aa, , RP,
             0b10_00_00_00, 0x10, 0x00, 0x00, 0x00, 0x01,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

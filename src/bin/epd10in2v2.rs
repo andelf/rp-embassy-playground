@@ -45,9 +45,6 @@ use embedded_graphics_core::pixelcolor::Gray4;
 use heapless::String;
 use rp::font::{FONT_MUZAI_PIXEL, FONT_SEG7_30X48, FONT_WQY16};
 
-const BLACK: BinaryColor = BinaryColor::Off;
-const WHITE: BinaryColor = BinaryColor::On;
-
 struct EPD10in2<'a> {
     spi: Spi<'a, SPI0, Blocking>,
     dc: Output<'a, AnyPin>,
@@ -70,10 +67,8 @@ impl EPD10in2<'_> {
         self.send_data(data);
     }
 
-    // negative logic
     pub fn busy_wait(&mut self) {
         loop {
-            // info!("busy");
             if self.busy.is_low() {
                 info!("busy out");
                 break;
@@ -427,19 +422,31 @@ async fn main(_spawner: Spawner) {
     epd.refresh();
     info!("clear ok!!!");
 
-    let (w, h, raw) =
-        text_image::text_image!(
-            text = "烟水茫茫，\n千里斜阳暮。\n山无数。\n乱红如雨",
-            font = "./徐静蕾手写体.ttf",
-            font_size = 48.0,
-            line_spacing = 0,
-            inverse,
-            Gray4,
-        );
+    epd.clear_as_bw_mode();
+    epd.configure_partial_update();
+
+    // let (w, h, raw) = text_image::gray_image!("./blue30.jpg", Gray4);
+
+    let (w, h, raw) = text_image::gray_image!("./404.jpg", Gray2);
+    epd.set_partial_refresh(Rectangle::new(Point::new(600, 100), Size::new(w, h)));
+
+    info!("size {}x{}", w, h);
+    info!("size {}", raw.len());
+    epd.refresh_gray2_image(raw);
+    // epd.refresh_gray4_image(raw);
+
+    let (w, h, raw) = text_image::text_image!(
+        text = "北京市发布持续低温黄色预警\n北京市发布道路结冰橙色预警\n\n-12.5℃ \n-16℃ -- -7℃\n相对湿度 36%\n东北风 1级",
+        font = "./徐静蕾手写体.ttf",
+        font_size = 48.0,
+        line_spacing = 0,
+        inverse,
+        Gray4,
+    );
 
     info!("w: {}, h: {}", w, h);
 
-    epd.set_partial_refresh(Rectangle::new(Point::new(536, 160), Size::new(w, h)));
+    epd.set_partial_refresh(Rectangle::new(Point::new(128, 160), Size::new(w, h)));
 
     epd.refresh_gray4_image(raw);
 

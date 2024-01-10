@@ -182,8 +182,8 @@ impl EPD10in2<'_> {
 
     pub fn update_bw_frame(&mut self, buf: &[u8]) {
         // write to NEW buf
-        //  self.send_command_data(0x4E, &[0x00, 0x00]);
-        //    self.send_command_data(0x4F, &[0x00, 0x00]);
+        // self.send_command_data(0x4E, &[0x00, 0x00]);
+        // self.send_command_data(0x4F, &[0x00, 0x00]);
 
         self.send_command(0x24);
         self.send_data(buf);
